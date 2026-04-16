@@ -219,7 +219,21 @@ A `.env.example` file is included in the repo root. Copy it to `.env` before sta
 cp .env.example .env
 ```
 
-The defaults work out of the box. Edit `.env` if you need to change ports or point the frontend at a backend running on a different machine. The `.env` file is gitignored — never commit it.
+The defaults work out of the box for ports. The values you are most likely to change:
+
+| Variable | Default | What it does |
+|---|---|---|
+| `MONITOR_PORT` | `8000` | Backend API port |
+| `KERNEL_PORT` | `8002` | Kernel process port |
+| `PORT` | `3000` | Frontend port |
+| `API_URL` | `http://localhost:8000` | URL the frontend uses to reach the backend — change the host if the backend runs on another machine |
+| `LLAMA_SERVER_PATH` | `~/llama.cpp/build/bin/llama-server` | Path to the llama-server binary — override if yours is elsewhere |
+| `ANTHROPIC_API_KEY` | _(empty)_ | Anthropic (Claude) API key |
+| `OPENAI_API_KEY` | _(empty)_ | OpenAI API key |
+| `GROQ_API_KEY` | _(empty)_ | Groq API key |
+| `TOGETHER_API_KEY` | _(empty)_ | Together AI API key |
+
+**API keys are read from `.env` at startup — they are never stored in the database.** Set only the keys for providers you use; leave the rest blank. The `.env` file is gitignored and must never be committed.
 
 ### Starting the app
 
@@ -345,13 +359,18 @@ A `.env.example` file is included in the repo root. Copy it to `.env` before sta
 cp .env.example .env
 ```
 
-The defaults work out of the box. The main values you may want to change:
+The defaults work out of the box for ports. The values you are most likely to change:
 
-```
-MONITOR_PORT=8000       # backend API port
-KERNEL_PORT=8002        # kernel port
-PORT=3000               # frontend port
-API_URL=http://localhost:8000   # change host if backend runs on another machine
-```
+| Variable | Default | What it does |
+|---|---|---|
+| `MONITOR_PORT` | `8000` | Backend API port |
+| `KERNEL_PORT` | `8002` | Kernel process port |
+| `PORT` | `3000` | Frontend port |
+| `API_URL` | `http://localhost:8000` | URL the frontend uses to reach the backend — change the host if the backend runs on another machine |
+| `LLAMA_SERVER_PATH` | `~/llama.cpp/build/bin/llama-server` | Path to the llama-server binary — override if yours is elsewhere |
+| `ANTHROPIC_API_KEY` | _(empty)_ | Anthropic (Claude) API key |
+| `OPENAI_API_KEY` | _(empty)_ | OpenAI API key |
+| `GROQ_API_KEY` | _(empty)_ | Groq API key |
+| `TOGETHER_API_KEY` | _(empty)_ | Together AI API key |
 
-Cloud provider API keys (OpenAI, Anthropic, Groq, etc.) are entered directly in the LLMs tab in the web app — they are stored in the LLM registry, not in `.env`. The `.env` file is gitignored — never commit it.
+**API keys are read from `.env` at startup — they are never stored in the database.** Set only the keys for providers you use; leave the rest blank. The `.env` file is gitignored and must never be committed.
