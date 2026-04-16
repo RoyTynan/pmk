@@ -1,0 +1,110 @@
+.submitPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 800px;
+  margin-bottom: 1.5rem;
+}
+
+.submitMsg { font-size: 0.9rem; color: #4f4; }
+
+.examplePrompts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.5rem;
+}
+
+.examplePrompt {
+  font-family: monospace;
+  font-size: 0.92rem;
+  color: #666;
+  background: transparent;
+  border: 1px solid #2a2a2a;
+  border-radius: 3px;
+  padding: 0.2rem 0.5rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.examplePrompt:hover { color: #aaa; border-color: #555; }
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.95rem;
+  color: #aaa;
+  cursor: pointer;
+  user-select: none;
+}
+.toggle input { accent-color: #4f4; cursor: pointer; }
+
+.hint { font-size: 0.85rem; color: #555; }
+
+/* table */
+.tableWrap { overflow-x: auto; }
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.table th {
+  text-align: left;
+  color: #aaa;
+  border-bottom: 1px solid #333;
+  padding: 0.3rem 0.5rem;
+  white-space: nowrap;
+  font-size: 0.9rem;
+}
+.table td {
+  padding: 0.3rem 0.5rem;
+  border-bottom: 1px solid #1a1a1a;
+  white-space: nowrap;
+  font-size: 0.95rem;
+  color: #fff;
+}
+.wide { white-space: normal; }
+
+.childRow { background: #151515; }
+.childRow td { border-bottom: 1px solid #161616; }
+.tree { color: #444; }
+.childPrompt { padding-left: 1.5rem; color: #ccc; }
+
+.resultCell {
+  max-width: 280px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+.resultCell.expanded {
+  white-space: pre-wrap;
+  overflow: visible;
+  max-width: none;
+}
+
+.pending { color: #aaa; }
+.running { color: #fa0; }
+.done    { color: #4f4; }
+.failed  { color: #f44; }
+
+.pagination {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.6rem;
+}
+.pagination button {
+  padding: 0.2rem 0.6rem;
+  font-family: monospace;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border: 1px solid #666;
+  background: #1a1a1a;
+  color: #fff;
+  border-radius: 3px;
+}
+.pagination button:disabled { color: #555; border-color: #333; cursor: default; }
+.pagination span { font-size: 0.9rem; color: #aaa; }
+
+.updated { color: #444; font-size: 0.85rem; margin-top: 0.8rem; }

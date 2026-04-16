@@ -1,0 +1,42 @@
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding-bottom: 0.8rem;
+  border-bottom: 1px solid #333;
+  flex-wrap: wrap;
+}
+
+.title {
+  margin: 0;
+  color: #7af;
+  font-size: 1.2rem;
+  flex: 1;
+}
+
+.sys {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.kernelStatus {
+  font-family: monospace;
+  font-size: 0.82rem;
+  padding: 0.2rem 0.7rem;
+  border-radius: 3px;
+  border: 1px solid transparent;
+  user-select: none;
+}
+
+.kernelOn {
+  color: #5fca5f;
+  border-color: #1a5a1a;
+  background: #0d2a0d;
+}
+
+.kernelOff {
+  color: #888;
+  border-color: #2a2a2a;
+  background: #111;
+}

@@ -1,0 +1,203 @@
+.container {
+  width: 100%;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  color: #666;
+}
+.statusDot { font-size: 0.8rem; }
+.ok   { color: #4f4; }
+.fail { color: #f44; }
+.info { color: #7af; font-size: 0.85rem; }
+
+/* two-column layout */
+.columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  min-width: 0; /* prevent grid blowout */
+}
+
+.section {
+  /* no bottom margin needed — col gap handles spacing */
+}
+.section h3 {
+  font-size: 0.9rem;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 0.6rem 0;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 4px;
+  padding: 0.8rem;
+}
+
+.controls {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* batch */
+.batchRow {
+  display: grid;
+  grid-template-columns: 1.4rem 1fr 180px auto;
+  gap: 0.5rem;
+  align-items: start;
+}
+.stepNum { color: #555; font-size: 0.95rem; padding-top: 0.4rem; }
+
+/* pipeline */
+.exampleRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid #222;
+  margin-bottom: 0.2rem;
+}
+
+.pipeInputRow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.pipeLabel {
+  font-size: 0.8rem;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pipeDivider {
+  text-align: center;
+  color: #444;
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+  margin: 0.2rem 0;
+}
+
+.pipeStepCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  background: #141414;
+  border: 1px solid #2a2a2a;
+  border-radius: 4px;
+  padding: 0.6rem;
+}
+.pipeStepHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.pipeArrow {
+  font-size: 0.8rem;
+  color: #555;
+  margin: 0.3rem 0 0.1rem;
+}
+
+.pipePromptBox {
+  background: #0d0d0d;
+  border: 1px solid #222;
+  border-radius: 3px;
+  padding: 0.4rem 0.6rem;
+  margin-top: 0.3rem;
+}
+.pipePromptLabel {
+  font-size: 0.75rem;
+  color: #555;
+  display: block;
+  margin-bottom: 0.2rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.pipePromptText {
+  font-size: 0.88rem;
+  color: #666;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.pipeResultCard {
+  background: #111;
+  border: 1px solid #333;
+  border-radius: 4px;
+  padding: 0.6rem 0.8rem;
+  border-left: 3px solid #333;
+}
+.pipeResultCard + .pipeResultCard {
+  margin-top: 0.3rem;
+}
+
+/* results */
+.results {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.8rem;
+}
+
+.card {
+  background: #111;
+  border: 1px solid #333;
+  border-radius: 4px;
+  padding: 0.6rem 0.8rem;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.4rem;
+  font-size: 0.95rem;
+  color: #aaa;
+}
+
+.badge {
+  font-size: 0.85rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+  background: #333;
+  color: #888;
+}
+.badge.running { background: #1a3a5c; color: #6af; }
+.badge.done    { background: #0a2a0a; color: #4f4; }
+.badge.failed  { background: #2a0a0a; color: #f44; }
+
+.result {
+  font-size: 0.95rem;
+  color: #ccc;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin-top: 0.3rem;
+}
+.error {
+  font-size: 0.95rem;
+  color: #f44;
+  white-space: pre-wrap;
+  margin-top: 0.3rem;
+}

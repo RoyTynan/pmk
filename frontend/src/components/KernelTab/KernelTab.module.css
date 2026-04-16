@@ -1,0 +1,271 @@
+.container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.2rem;
+  align-items: start;
+}
+
+.wide {
+  grid-column: 1 / -1;
+}
+
+/* ── card ─────────────────────────────────────────────────────── */
+.card {
+  background: #0e0e0e;
+  border: 1px solid #222;
+  border-radius: 6px;
+  padding: 1.1rem 1.3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.cardHead {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.cardTitle {
+  font-size: 0.82rem;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  flex: 1;
+}
+
+/* ── refresh ──────────────────────────────────────────────────── */
+.btnRefresh {
+  background: transparent;
+  border: 1px solid #2a2a2a;
+  color: #666;
+  border-radius: 4px;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.btnRefresh:hover:not(:disabled) { border-color: #555; color: #ccc; }
+.btnRefresh:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.btnClear {
+  background: transparent;
+  border: 1px solid #2a2a2a;
+  color: #666;
+  border-radius: 4px;
+  padding: 0.15rem 0.6rem;
+  font-size: 0.75rem;
+  font-family: monospace;
+  cursor: pointer;
+}
+.btnClear:hover:not(:disabled) { border-color: #8a1a1a; color: #ca5f5f; }
+.btnClear:disabled { opacity: 0.3; cursor: not-allowed; }
+.btnClearWarn { border-color: #8a1a1a !important; color: #ca5f5f !important; background: #1a0505 !important; }
+
+/* ── properties table ─────────────────────────────────────────── */
+.propTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+  font-family: monospace;
+}
+.propTable td { padding: 0.25rem 0.4rem; vertical-align: middle; }
+.propTable td:first-child { color: #555; width: 90px; white-space: nowrap; }
+.propTable td:last-child  { color: #bbb; }
+
+/* ── status badges ────────────────────────────────────────────── */
+.statusUp {
+  color: #5fca5f;
+  background: #0d2a0d;
+  border: 1px solid #1a5a1a;
+  border-radius: 3px;
+  padding: 0.1rem 0.5rem;
+  font-size: 0.8rem;
+  font-family: monospace;
+}
+.statusDown {
+  color: #ca5f5f;
+  background: #2a0d0d;
+  border: 1px solid #5a1a1a;
+  border-radius: 3px;
+  padding: 0.1rem 0.5rem;
+  font-size: 0.8rem;
+  font-family: monospace;
+}
+
+/* ── start / stop controls ───────────────────────────────────── */
+.controls {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.btnStart {
+  flex: 1;
+  background: #0d2a0d;
+  border: 1px solid #1a5a1a;
+  color: #5fca5f;
+  border-radius: 4px;
+  padding: 0.4rem 0;
+  font-size: 0.88rem;
+  font-family: monospace;
+  cursor: pointer;
+}
+.btnStart:hover:not(:disabled) { background: #122a12; }
+.btnStart:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.btnStop {
+  flex: 1;
+  background: #2a0d0d;
+  border: 1px solid #5a1a1a;
+  color: #ca5f5f;
+  border-radius: 4px;
+  padding: 0.4rem 0;
+  font-size: 0.88rem;
+  font-family: monospace;
+  cursor: pointer;
+}
+.btnStop:hover:not(:disabled) { background: #2a1212; }
+.btnStop:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* ── queue stats ──────────────────────────────────────────────── */
+.statRow {
+  display: flex;
+  gap: 1rem;
+}
+
+.stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  border: 1px solid #222;
+  border-radius: 5px;
+  padding: 0.7rem 0.4rem;
+  cursor: pointer;
+  user-select: none;
+  transition: border-color 0.15s, background 0.15s;
+}
+.stat:hover { background: #141414; border-color: #333; }
+.statActive { background: #141414 !important; border-color: #444 !important; }
+
+.statNum   { font-size: 1.6rem; font-family: monospace; font-weight: 600; }
+.statLabel { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.07em; color: #555; }
+
+.s_pending { }
+.s_pending .statNum { color: #c0a840; }
+.s_running .statNum { color: #5aaddd; }
+.s_done    .statNum { color: #5fca5f; }
+.s_failed  .statNum { color: #ca5f5f; }
+
+/* ── task panel ───────────────────────────────────────────────── */
+.taskPanel  { }
+.taskCount  { font-size: 0.78rem; color: #444; font-family: monospace; margin-right: auto; padding-left: 0.4rem; }
+.taskEmpty  { color: #444; font-size: 0.85rem; font-family: monospace; padding: 0.2rem 0; }
+
+.taskTable  { width: 100%; border-collapse: collapse; font-family: monospace; font-size: 0.82rem; }
+.taskTable thead th { color: #444; font-weight: normal; text-align: left; padding: 0.2rem 0.5rem 0.5rem; border-bottom: 1px solid #1e1e1e; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.taskTable tbody tr + tr td { border-top: 1px solid #161616; }
+.taskTable tbody td { padding: 0.35rem 0.5rem; vertical-align: top; }
+
+.taskTime   { color: #555; white-space: nowrap; width: 80px; font-size: 0.78rem; }
+.taskId     { color: #555; white-space: nowrap; width: 70px; }
+.taskType   { color: #7a9abb; white-space: nowrap; width: 160px; }
+.taskPrompt { color: #888; max-width: 280px; word-break: break-word; }
+.taskResult  { color: #5fca5f; max-width: 260px; word-break: break-word; }
+.taskLlm     { color: #7a9abb; white-space: nowrap; width: 120px; font-size: 0.8rem; }
+.taskError   { color: #ca5f5f; max-width: 260px; word-break: break-word; }
+.taskActions { white-space: nowrap; width: 60px; text-align: right; }
+
+.btnRequeue,
+.btnDel {
+  position: relative;
+  background: transparent;
+  border: 1px solid #2a2a2a;
+  color: #666;
+  border-radius: 3px;
+  padding: 0.1rem 0.4rem;
+  cursor: pointer;
+}
+.btnRequeue { font-size: 0.85rem; margin-right: 0.25rem; }
+.btnDel     { font-size: 0.75rem; }
+.btnRequeue:hover:not(:disabled) { border-color: #5aaddd; color: #5aaddd; }
+.btnDel:hover:not(:disabled)     { border-color: #8a1a1a; color: #ca5f5f; }
+.btnRequeue:disabled,
+.btnDel:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* tooltip */
+.btnRequeue::after,
+.btnDel::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 5px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1e1e1e;
+  border: 1px solid #333;
+  color: #bbb;
+  font-size: 0.7rem;
+  font-family: monospace;
+  white-space: nowrap;
+  padding: 0.2rem 0.45rem;
+  border-radius: 3px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.12s;
+  z-index: 10;
+}
+.btnRequeue:hover::after,
+.btnDel:hover::after { opacity: 1; }
+
+/* ── pagination ───────────────────────────────────────────────── */
+.pagination { display: flex; align-items: center; gap: 0.6rem; padding-top: 0.6rem; border-top: 1px solid #1a1a1a; }
+.pageBtn    { background: transparent; border: 1px solid #2a2a2a; color: #666; border-radius: 4px; padding: 0.1rem 0.6rem; font-size: 1rem; cursor: pointer; line-height: 1.4; }
+.pageBtn:hover:not(:disabled) { border-color: #555; color: #ccc; }
+.pageBtn:disabled { opacity: 0.3; cursor: not-allowed; }
+.pageInfo   { font-size: 0.78rem; color: #555; font-family: monospace; }
+
+/* ── activity log ─────────────────────────────────────────────── */
+.actTable { width: 100%; border-collapse: collapse; font-family: monospace; font-size: 0.8rem; }
+.actTable thead th { color: #444; font-weight: normal; text-align: left; padding: 0.2rem 0.5rem 0.5rem; border-bottom: 1px solid #1e1e1e; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.actTable tbody tr + tr td { border-top: 1px solid #141414; }
+.actTable tbody td { padding: 0.25rem 0.5rem; vertical-align: middle; }
+.actRowErr td { background: #150505; }
+
+.actTime   { color: #555; white-space: nowrap; width: 80px; }
+.actLlm    { color: #9ab; white-space: nowrap; max-width: 120px; overflow: hidden; text-overflow: ellipsis; }
+.actSource { color: #777; white-space: nowrap; width: 70px; }
+.actModel  { color: #666; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.actDur    { color: #888; text-align: right; width: 65px; }
+.actLen    { color: #555; text-align: right; width: 60px; }
+.actOk     { color: #5fca5f; text-align: center; width: 30px; }
+.actFail   { color: #ca5f5f; text-align: center; width: 30px; }
+.actErrTip { cursor: help; }
+
+/* ── scheduler blocks ─────────────────────────────────────────── */
+.schedBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-top: 0.4rem;
+}
+.schedBlock + .schedBlock { margin-top: 1rem; }
+
+.schedName {
+  font-size: 0.78rem;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid #1e1e1e;
+}
+
+.opTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: monospace;
+  font-size: 0.88rem;
+}
+.opTable tr + tr td { border-top: 1px solid #181818; }
+.opTable td { padding: 0.3rem 0.4rem; vertical-align: middle; }
+.opRoute { color: #9ab; width: 260px; white-space: nowrap; }
+.opDesc  { color: #555; font-size: 0.82rem; }

@@ -1,0 +1,48 @@
+services:
+
+  pmk-backend:
+    build:
+      context: .
+      dockerfile: docker/backend/Dockerfile
+    ports:
+      - "8000:8000"
+      - "8002:8002"
+    volumes:
+      # Model files — bind mount from host (user provides CPU or GPU binary)
+      - ./llm_models:/app/llm_models:ro
+      # llama-server binary — bind mount from host (CPU or GPU build)
+      - ${LLAMA_SERVER_PATH:-~/llama.cpp/build/bin/llama-server}:/root/llama.cpp/build/bin/llama-server:ro
+      # Persistent databases
+      - pmk-tasks-db:/app/server/kernelroot/database
+      - pmk-llm-db:/app/server/schedulers/llm_scheduler/database
+      # Logs
+      - pmk-logs:/app/server/schedulers/llm_scheduler/logs
+    environment:
+      MONITOR_PORT: "8000"
+      KERNEL_PORT: "8002"
+      RAY_LOG_TO_STDERR: "0"
+      RAY_DISABLE_USAGE_STATS: "1"
+    env_file:
+      - .env
+    shm_size: 256m
+    init: true
+    restart: unless-stopped
+
+  pmk-frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend/Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      API_URL: "http://pmk-backend:8000"
+      PORT: "3000"
+      NODE_ENV: "production"
+    depends_on:
+      - pmk-backend
+    restart: unless-stopped
+
+volumes:
+  pmk-tasks-db:
+  pmk-llm-db:
+  pmk-logs:

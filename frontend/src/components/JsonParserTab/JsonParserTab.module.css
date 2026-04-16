@@ -1,0 +1,194 @@
+.container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+  width: 100%;
+}
+
+/* --- toolbar --- */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.6rem;
+}
+.label {
+  font-size: 1rem;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  flex: 1;
+}
+
+/* --- left panel --- */
+.left { display: flex; flex-direction: column; }
+
+.textarea {
+  width: 100%;
+  min-height: 360px;
+  background: #111;
+  border: 1px solid #333;
+  border-radius: 4px;
+  color: #e0e0e0;
+  font-family: monospace;
+  font-size: 1rem;
+  padding: 0.8rem;
+  resize: vertical;
+  box-sizing: border-box;
+}
+.textarea:focus { outline: none; border-color: #555; }
+
+.actions { margin-top: 0.8rem; display: flex; gap: 0.6rem; }
+
+/* --- right panel --- */
+.right { display: flex; flex-direction: column; }
+
+.empty { color: #555; font-size: 0.9rem; padding: 1.2rem 0; }
+
+/* --- result box --- */
+.resultBox {
+  border: 1px solid #2a2a2a;
+  border-radius: 4px;
+  padding: 1rem;
+  background: #0e0e0e;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.resultHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+/* --- meta table --- */
+.metaTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 1rem;
+}
+.metaTable td { padding: 0.2rem 0.4rem; vertical-align: top; }
+.metaTable td:first-child { color: #666; width: 70px; white-space: nowrap; }
+.metaTable td:last-child  { color: #bbb; }
+
+/* --- section label --- */
+.sectionLabel {
+  font-size: 1rem;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-top: 1px solid #222;
+  padding-top: 0.6rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.warnCount {
+  background: #4a2e00;
+  color: #e09030;
+  border-radius: 10px;
+  padding: 0.05rem 0.45rem;
+  font-size: 0.72rem;
+}
+
+/* --- schema tree --- */
+.schemaTree {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: 1rem;
+  font-family: monospace;
+}
+.schemaRow {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 1.4rem;
+}
+.schemaKey {
+  color: #9ab;
+  min-width: 110px;
+  flex-shrink: 0;
+}
+.schemaOf {
+  color: #555;
+  font-size: 1rem;
+}
+
+/* --- type chips --- */
+.typeChip {
+  border-radius: 3px;
+  padding: 0.1rem 0.4rem;
+  font-size: 1rem;
+  font-family: monospace;
+  font-weight: 500;
+}
+.tString  { background: #0d2033; color: #5aaddd; border: 1px solid #1a3f5a; }
+.tNumber  { background: #1e2a0a; color: #a0c040; border: 1px solid #3a5010; }
+.tBoolean { background: #1a0d33; color: #9a70dd; border: 1px solid #3a1a66; }
+.tNull    { background: #2a1010; color: #cc4444; border: 1px solid #551515; }
+.tObject  { background: #1a1a1a; color: #888;    border: 1px solid #333; }
+.tArray   { background: #1a1a1a; color: #888;    border: 1px solid #333; }
+.tMixed   { background: #2a2000; color: #c09030; border: 1px solid #4a3a00; }
+.tMuted   { background: #181818; color: #666;    border: 1px solid #2a2a2a; }
+
+/* --- warnings --- */
+.warnList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.warnItem {
+  font-size: 0.93rem;
+  color: #c09030;
+  font-family: monospace;
+}
+.warnNone { font-size: 0.93rem; color: #444; }
+
+/* --- error box --- */
+.errorBox {
+  border: 1px solid #5a2020;
+  border-radius: 4px;
+  padding: 1rem;
+  background: #140c0c;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.errorMsg {
+  color: #e07070;
+  font-size: 0.83rem;
+  font-family: monospace;
+  word-break: break-all;
+}
+
+/* --- badges --- */
+.badgePass {
+  background: #0d2a0d; border: 1px solid #1a5a1a; color: #5fca5f;
+  border-radius: 3px; padding: 0.15rem 0.5rem;
+  font-size: 0.88rem; text-transform: uppercase; letter-spacing: 0.05em;
+}
+.badgeFail {
+  background: #2a0d0d; border: 1px solid #5a1a1a; color: #ca5f5f;
+  border-radius: 3px; padding: 0.15rem 0.5rem;
+  font-size: 0.88rem; text-transform: uppercase; letter-spacing: 0.05em;
+}
+
+/* --- buttons --- */
+.btnRun {
+  background: #1a2a1a; border: 1px solid #2d4a2d; color: #6fcf6f;
+  border-radius: 4px; padding: 0.45rem 1rem; font-size: 0.85rem; cursor: pointer;
+}
+.btnRun:hover:not(:disabled) { background: #223322; }
+.btnRun:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.btnGhost {
+  background: transparent; border: 1px solid #333; color: #888;
+  border-radius: 4px; padding: 0.25rem 0.6rem; font-size: 1rem; cursor: pointer;
+}
+.btnGhost:hover { border-color: #555; color: #bbb; }

@@ -1,0 +1,77 @@
+.wrap { padding: 1rem; max-width: 860px; }
+
+.banner {
+  display: inline-block;
+  background: #1a3a1a; color: #4f4;
+  border: 1px solid #4f4; border-radius: 4px;
+  padding: 0.4rem 1rem; font-size: 1rem; margin-bottom: 1.2rem;
+}
+
+.section { margin-bottom: 2rem; }
+.section h2 { margin: 0 0 0.8rem; font-size: 1rem; color: #aaa; text-transform: uppercase; letter-spacing: 0.05em; }
+
+/* instances */
+.instances { display: flex; flex-direction: column; gap: 0.5rem; }
+.instance  { display: flex; align-items: center; gap: 0.8rem; font-size: 1rem; }
+.instanceName { color: #eee; min-width: 80px; }
+.dot  { font-size: 1rem; }
+.on   { color: #4f4; }
+.off  { color: #f44; }
+.dim  { color: #666; font-size: 0.9rem; }
+
+/* steps */
+.steps { display: flex; flex-direction: column; gap: 0.8rem; margin-bottom: 0.8rem; }
+
+.step {
+  display: grid;
+  grid-template-columns: 1.4rem 1fr 220px auto auto;
+  gap: 0.5rem;
+  align-items: start;
+}
+
+.stepNum { color: #555; font-size: 0.95rem; padding-top: 0.4rem; }
+
+.promptBox {
+  font-family: monospace; font-size: 0.95rem;
+  background: #111; color: #eee;
+  border: 1px solid #333; border-radius: 4px;
+  padding: 0.4rem 0.6rem; resize: vertical; width: 100%;
+}
+.promptBox:focus { outline: none; border-color: #555; }
+
+.instanceSelect {
+  font-family: monospace; font-size: 0.92rem;
+  background: #111; color: #eee;
+  border: 1px solid #333; border-radius: 4px;
+  padding: 0.3rem 0.4rem; height: fit-content;
+  min-width: 220px;
+}
+
+.stepResult {
+  grid-column: 2 / 4;
+  font-size: 0.95rem; padding: 0.3rem 0.6rem;
+  border-radius: 4px; border: 1px solid #333;
+  background: #0d0d0d; color: #ccc;
+  white-space: pre-wrap; word-break: break-word;
+}
+.running { border-color: #555; color: #888; }
+.done    { border-color: #2a4a2a; color: #8f8; }
+.error   { border-color: #4a2a2a; color: #f88; }
+
+.spinner { margin-right: 0.4rem; animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: 0.3 } }
+
+.pipelineActions { display: flex; gap: 0.6rem; align-items: center; }
+.runError { font-size: 0.88rem; color: #f44; }
+
+/* history */
+.history { display: flex; flex-direction: column; gap: 0.5rem; }
+.msg {
+  display: flex; gap: 0.8rem; align-items: baseline;
+  font-size: 0.95rem; padding: 0.4rem 0.6rem;
+  border-radius: 4px; background: #0d0d0d; border: 1px solid #222;
+}
+.role { font-size: 0.85rem; color: #555; min-width: 70px; text-transform: uppercase; }
+.msgContent { color: #ccc; white-space: pre-wrap; word-break: break-word; }
+.user      .role { color: #7af; }
+.assistant .role { color: #4f4; }

@@ -1,0 +1,359 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* ── section ──────────────────────────────────────────────────── */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  background: #0e0e0e;
+  border: 1px solid #1e1e1e;
+  border-radius: 6px;
+  padding: 1rem 1.2rem;
+}
+
+.sectionHead {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.sectionTitle {
+  font-size: 0.82rem;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  flex: 1;
+}
+
+.pill {
+  background: #1a1a2e;
+  border: 1px solid #2a2a50;
+  color: #6688cc;
+  border-radius: 10px;
+  padding: 0.1rem 0.55rem;
+  font-size: 0.78rem;
+  font-family: monospace;
+}
+
+/* ── route table ──────────────────────────────────────────────── */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: monospace;
+  font-size: 0.9rem;
+}
+.table th {
+  text-align: left;
+  color: #444;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: 0.3rem 0.5rem;
+  border-bottom: 1px solid #1e1e1e;
+  font-weight: normal;
+}
+.table td { padding: 0.4rem 0.5rem; vertical-align: middle; }
+.table tbody tr + tr > td { border-top: 1px solid #181818; }
+
+.routeRow:hover td { background: #131313; }
+.routeRowOpen td   { background: #111; }
+
+.methodCell { width: 80px; white-space: nowrap; }
+.route      { color: #9ab; }
+.desc       { color: #555; font-size: 0.85rem; }
+.chevron    { color: #444; width: 20px; text-align: right; font-size: 0.8rem; }
+
+/* ── method badges ────────────────────────────────────────────── */
+.badge {
+  display: inline-block;
+  border-radius: 3px;
+  padding: 0.1rem 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-family: monospace;
+  margin-right: 0.2rem;
+}
+.mGet    { background: #0d2033; color: #5aaddd; border: 1px solid #1a3f5a; }
+.mPost   { background: #0d2a0d; color: #5fca5f; border: 1px solid #1a5a1a; }
+.mDelete { background: #2a0d0d; color: #ca5f5f; border: 1px solid #5a1a1a; }
+.mPut    { background: #1e2a0a; color: #a0c040; border: 1px solid #3a5010; }
+.mPatch  { background: #1a1a0a; color: #c0a840; border: 1px solid #3a3010; }
+.mOther  { background: #1a1a1a; color: #888;    border: 1px solid #333; }
+
+/* ── test panel ───────────────────────────────────────────────── */
+.panelCell {
+  padding: 0 !important;
+  border-top: none !important;
+}
+
+.testPanel {
+  background: #0a0a0a;
+  border-top: 1px solid #1e1e1e;
+  border-bottom: 1px solid #1e1e1e;
+  padding: 0.8rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+/* path params */
+.paramRow {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+.paramLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.paramName {
+  font-size: 0.8rem;
+  color: #666;
+  font-family: monospace;
+}
+.paramInput {
+  background: #111;
+  border: 1px solid #2a2a2a;
+  border-radius: 3px;
+  color: #ccc;
+  font-family: monospace;
+  font-size: 0.85rem;
+  padding: 0.2rem 0.5rem;
+  width: 140px;
+}
+.paramInput:focus { outline: none; border-color: #444; }
+
+.paramSelect {
+  background: #111;
+  border: 1px solid #2a2a2a;
+  border-radius: 3px;
+  color: #ccc;
+  font-family: monospace;
+  font-size: 0.85rem;
+  padding: 0.2rem 0.5rem;
+  min-width: 200px;
+  max-width: 360px;
+  cursor: pointer;
+}
+.paramSelect:focus { outline: none; border-color: #555; }
+
+/* body */
+.bodyArea {
+  width: 100%;
+  background: #0e0e0e;
+  border: 1px solid #2a2a2a;
+  border-radius: 4px;
+  color: #ccc;
+  font-family: monospace;
+  font-size: 0.85rem;
+  padding: 0.5rem 0.7rem;
+  resize: vertical;
+  box-sizing: border-box;
+  min-height: 80px;
+}
+.bodyArea:focus { outline: none; border-color: #444; }
+
+/* send row */
+.sendRow {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.urlPreview {
+  flex: 1;
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: #444;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.btnSend {
+  background: #0d2a0d;
+  border: 1px solid #1a5a1a;
+  color: #5fca5f;
+  border-radius: 4px;
+  padding: 0.35rem 1.2rem;
+  font-size: 0.85rem;
+  font-family: monospace;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btnSend:hover:not(:disabled) { background: #122a12; }
+.btnSend:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* response */
+.respBox {
+  border: 1px solid #1e1e1e;
+  border-radius: 4px;
+  background: #080808;
+  overflow: hidden;
+}
+.respMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.35rem 0.7rem;
+  border-bottom: 1px solid #1a1a1a;
+}
+.statusOk  { font-family: monospace; font-size: 0.85rem; color: #5fca5f; }
+.statusErr { font-family: monospace; font-size: 0.85rem; color: #ca5f5f; }
+.respMs    { font-family: monospace; font-size: 0.78rem; color: #444; }
+.respBody  {
+  margin: 0;
+  padding: 0.6rem 0.8rem;
+  font-family: monospace;
+  font-size: 0.82rem;
+  color: #9ab;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 300px;
+  overflow-y: auto;
+}
+.respError {
+  display: block;
+  padding: 0.6rem 0.8rem;
+  font-family: monospace;
+  font-size: 0.82rem;
+  color: #ca5f5f;
+}
+
+/* ── smart form ───────────────────────────────────────────────── */
+.smartForm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.field {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+.fieldLabel {
+  font-family: monospace;
+  font-size: 0.82rem;
+  color: #666;
+  width: 100px;
+  flex-shrink: 0;
+  padding-top: 0.3rem;
+}
+
+.fieldInput {
+  flex: 1;
+  background: #111;
+  border: 1px solid #2a2a2a;
+  border-radius: 3px;
+  color: #ccc;
+  font-family: monospace;
+  font-size: 0.85rem;
+  padding: 0.25rem 0.5rem;
+}
+.fieldInput:focus { outline: none; border-color: #555; }
+
+.fieldSelect {
+  flex: 1;
+  background: #111;
+  border: 1px solid #2a2a2a;
+  border-radius: 3px;
+  color: #ccc;
+  font-family: monospace;
+  font-size: 0.85rem;
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+}
+.fieldSelect:focus { outline: none; border-color: #555; }
+
+.fieldTextarea {
+  flex: 1;
+  background: #111;
+  border: 1px solid #2a2a2a;
+  border-radius: 3px;
+  color: #ccc;
+  font-family: monospace;
+  font-size: 0.85rem;
+  padding: 0.25rem 0.5rem;
+  resize: vertical;
+}
+.fieldTextarea:focus { outline: none; border-color: #555; }
+
+.nestedBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  border-left: 2px solid #1e1e1e;
+  padding-left: 0.8rem;
+}
+
+.nestedLabel {
+  font-family: monospace;
+  font-size: 0.78rem;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* ── prefill row ──────────────────────────────────────────────── */
+.prefillRow {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #1a1a1a;
+}
+.prefillLabel {
+  font-family: monospace;
+  font-size: 0.78rem;
+  color: #555;
+  white-space: nowrap;
+}
+
+/* ── body block ───────────────────────────────────────────────── */
+.bodyBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.bodyHead {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.bodyLabel {
+  font-family: monospace;
+  font-size: 0.75rem;
+  color: #444;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  flex: 1;
+}
+
+.modeToggle {
+  display: flex;
+  border: 1px solid #2a2a2a;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.modeBtn {
+  background: transparent;
+  border: none;
+  color: #555;
+  font-family: monospace;
+  font-size: 0.75rem;
+  padding: 0.15rem 0.55rem;
+  cursor: pointer;
+}
+.modeBtn:hover { color: #aaa; }
+.modeBtnActive { background: #1a1a1a; color: #ccc; }
+
+/* misc */
+.muted { color: #444; font-size: 0.9rem; }
