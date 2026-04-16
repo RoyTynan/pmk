@@ -49,7 +49,6 @@ export default function LLMsTab() {
   const [cloudName,     setCloudName]     = useState('')
   const [cloudUrl,      setCloudUrl]      = useState('')
   const [cloudModel,    setCloudModel]    = useState('')
-  const [cloudKey,      setCloudKey]      = useState('')
   const [cloudMsg,        setCloudMsg]        = useState('')
   const [cloudErr,        setCloudErr]        = useState(false)
   const [cloudTestResult, setCloudTestResult] = useState<unknown>(null)
@@ -86,7 +85,6 @@ export default function LLMsTab() {
       setCloudName(llm.name)
       setCloudUrl(llm.url)
       setCloudModel(llm.model)
-      setCloudKey(llm.api_key || '')
       setCloudMsg(''); setCloudErr(false); setCloudTestResult(null)
       cloudFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 
@@ -159,14 +157,13 @@ export default function LLMsTab() {
     setCloudProvider(id)
     setCloudUrl(p.url)
     setCloudModel(p.model)
-    if (!p.needsKey) setCloudKey('')
   }
 
   async function testCloud() {
     if (!cloudUrl)   { setCloudMsg('url required');   setCloudErr(true); return }
     if (!cloudModel) { setCloudMsg('model required'); setCloudErr(true); return }
     setCloudMsg('testing…'); setCloudErr(false); setCloudTestResult(null)
-    const data = await api.llmTest({ name: '_test', url: cloudUrl, model: cloudModel, api_key: cloudKey || undefined, provider: cloudProvider })
+    const data = await api.llmTest({ name: '_test', url: cloudUrl, model: cloudModel, provider: cloudProvider })
     setCloudMsg(data.ok ? '✓ reachable' : `✗ ${data.error || 'unreachable'}`)
     setCloudErr(!data.ok)
     if (data.data !== undefined) setCloudTestResult(data.data)
@@ -177,14 +174,12 @@ export default function LLMsTab() {
     if (!cloudName)  { setCloudMsg('name required');  setCloudErr(true); return }
     if (!cloudUrl)   { setCloudMsg('url required');   setCloudErr(true); return }
     if (!cloudModel) { setCloudMsg('model required'); setCloudErr(true); return }
-    const provider = PROVIDERS.find(p => p.id === cloudProvider)
-    if (provider?.needsKey && !cloudKey) { setCloudMsg('API key required for this provider'); setCloudErr(true); return }
     setCloudMsg('testing…'); setCloudErr(false)
-    const test = await api.llmTest({ name: '_test', url: cloudUrl, model: cloudModel, api_key: cloudKey || undefined, provider: cloudProvider })
+    const test = await api.llmTest({ name: '_test', url: cloudUrl, model: cloudModel, provider: cloudProvider })
     if (!test.ok) { setCloudMsg(`✗ ${test.error || 'unreachable'} — not registered`); setCloudErr(true); return }
-    await api.llmRegisterRemote({ name: cloudName, url: cloudUrl, model: cloudModel, api_key: cloudKey || undefined, provider: cloudProvider, type: 'cloud' })
+    await api.llmRegisterRemote({ name: cloudName, url: cloudUrl, model: cloudModel, provider: cloudProvider, type: 'cloud' })
     setCloudMsg(`registered ${cloudName}`); setCloudErr(false)
-    setCloudName(''); setCloudModel(''); setCloudKey('')
+    setCloudName(''); setCloudModel('')
     setTimeout(() => setCloudMsg(''), 4000)
   }
 
@@ -350,15 +345,9 @@ export default function LLMsTab() {
           <div className="row" style={{ marginBottom: '0.4rem' }}>
             <input type="text" placeholder="model (e.g. gpt-4o)" style={{ flex: 1 }} value={cloudModel} onChange={e => setCloudModel(e.target.value)} />
           </div>
-          {(PROVIDERS.find(p => p.id === cloudProvider)?.needsKey || cloudKey) && (
-            <div className="row" style={{ marginBottom: '0.4rem' }}>
-              <input
-                type="text"
-                placeholder="API key"
-                style={{ flex: 1, fontFamily: 'monospace' }}
-                value={cloudKey}
-                onChange={e => setCloudKey(e.target.value)}
-              />
+          {PROVIDERS.find(p => p.id === cloudProvider)?.needsKey && (
+            <div style={{ fontSize: '0.8rem', color: '#888', marginBottom: '0.4rem', fontFamily: 'monospace' }}>
+              API key: set <strong>{cloudProvider.toUpperCase()}_API_KEY</strong> in your .env file
             </div>
           )}
           <div className="row">

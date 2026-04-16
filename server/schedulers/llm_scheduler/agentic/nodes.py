@@ -26,8 +26,8 @@ def generate(state: dict) -> dict:
     llm      = llms.get(state["llm_name"], {})
     url      = llm.get("url", "")
     model    = llm.get("model", "")
-    api_key  = llm.get("api_key", "")
     provider = llm.get("provider", "custom")
+    api_key  = llm_registry.get_api_key(provider)
 
     history = state.get("history", [])
     if not history:

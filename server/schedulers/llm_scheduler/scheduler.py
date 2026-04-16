@@ -17,7 +17,8 @@ from kernelroot.core.scheduler_base import SchedulerBase
 from kernelroot.core.handler_base import HandlerBase
 from schedulers.llm_scheduler.agents.echo_agent import EchoAgent
 from schedulers.llm_scheduler.agents.planner import PlannerAgent
-from kernelroot.core.config import DEFAULT_LLM, LLM_SHORTCUTS, POLL_INTERVAL_SECONDS
+from kernelroot.core.config import POLL_INTERVAL_SECONDS
+from schedulers.llm_scheduler.config import DEFAULT_LLM, LLM_SHORTCUTS
 
 
 # ---------------------------------------------------------------------------
@@ -80,7 +81,10 @@ class LLMScheduler(SchedulerBase):
                 llms      = llm_registry.load()
                 self._sync_llms(llms)
                 available = self._available_llms(llms)
-                task      = task_queue.get_next_pending_for_available_llm(available, list(self.AGENT_REGISTRY.keys()))
+                task      = task_queue.get_next_pending_for_available_llm(
+                    available, list(self.AGENT_REGISTRY.keys()),
+                    shortcuts=LLM_SHORTCUTS, default_llm=DEFAULT_LLM,
+                )
                 if task:
                     llm, prompt = self._parse_llm(task["prompt"], task.get("target_llm"))
                     self._running[llm] += 1

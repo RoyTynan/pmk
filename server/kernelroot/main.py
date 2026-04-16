@@ -30,11 +30,8 @@ from schedulers.llm_scheduler.analyse.router import router as analyse_router
 from schedulers.llm_scheduler.traces.router import router as traces_router
 from schedulers.llm_scheduler.traces.store import init_db as init_traces_db
 from schedulers.llm_scheduler.paths import LOGS_DIR
-from kernelroot.core.config import TASKS_DB_PATH
-from kernelroot.core.config import (
-    BASE_DIR, DEFAULT_LLM,
-    LLAMA_SERVER_PATH, LLM_MODELS_DIR,
-)
+from kernelroot.core.config import TASKS_DB_PATH, BASE_DIR
+from schedulers.llm_scheduler.config import DEFAULT_LLM, LLAMA_SERVER_PATH, LLM_MODELS_DIR
 from kernelroot.scheduler_registry import SCHEDULER_MAP as _SCHEDULER_MAP
 from kernelroot.router_registry import ROUTERS as _SCHEDULER_ROUTERS
 
@@ -332,7 +329,6 @@ def get_llms():
             "type":       cfg.get("type", "remote"),
             "path":       cfg.get("path", ""),
             "port":       cfg.get("port", ""),
-            "api_key":    cfg.get("api_key", ""),
             "provider":   cfg.get("provider", "custom"),
             "running":    bool(s.get("running", False)),
             "pid":        s.get("pid"),
@@ -411,7 +407,6 @@ class RegisterRemoteRequest(BaseModel):
     name:      str
     url:       str
     model:     str
-    api_key:   str = ''
     provider:  str = 'custom'
     type:      str = 'remote'
     max_tasks: int = 1
@@ -422,7 +417,7 @@ def register_remote(req: RegisterRemoteRequest):
     llm_registry.add(req.name, {
         "url": req.url, "model": req.model,
         "max_tasks": req.max_tasks, "type": req.type,
-        "api_key": req.api_key, "provider": req.provider,
+        "provider": req.provider,
     })
     llm_registry.set_state(req.name, True)  # remote LLMs are always available once registered
     _notify()
@@ -431,10 +426,11 @@ def register_remote(req: RegisterRemoteRequest):
 
 @app.post("/llms/test")
 def test_connection(req: RegisterRemoteRequest):
+    api_key = llm_registry.get_api_key(req.provider)
     try:
         if req.provider == 'anthropic':
             # Anthropic /v1/models is unreliable — use a 1-token completion instead
-            headers = {"x-api-key": req.api_key, "anthropic-version": ANTHROPIC_VERSION,
+            headers = {"x-api-key": api_key, "anthropic-version": ANTHROPIC_VERSION,
                        "content-type": "application/json"}
             r = httpx.post(
                 f"{req.url.rstrip('/')}/messages",
@@ -443,7 +439,7 @@ def test_connection(req: RegisterRemoteRequest):
                 timeout=10.0,
             )
         else:
-            headers = {"Authorization": f"Bearer {req.api_key}"} if req.api_key else {}
+            headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
             # stored URL already includes /v1 (e.g. https://api.openai.com/v1)
             r = httpx.get(f"{req.url.rstrip('/')}/models", timeout=5.0, headers=headers)
         try:
@@ -851,8 +847,8 @@ async def _run_pipeline(steps: list[PipelineStep]):
         llm      = registry.get(step.name, {})
         url      = llm.get("url", "")
         model    = llm.get("model", "")
-        api_key  = llm.get("api_key", "")
         provider = llm.get("provider", "custom")
+        api_key  = llm_registry.get_api_key(provider)
 
         history.append({"role": "user", "content": step.prompt})
         prompt_len = sum(len(m.get("content", "")) for m in history)

@@ -5,7 +5,7 @@ The kernel enforces TOKEN_BUDGET_CEILING as a hard cap on all agents.
 Agents can spawn child tasks via spawn_task() for IPC.
 """
 import time
-from kernelroot.core.config import DEFAULT_LLM, DEFAULT_MAX_TOKENS, TOKEN_BUDGET_CEILING
+from schedulers.llm_scheduler.config import DEFAULT_LLM, DEFAULT_MAX_TOKENS, TOKEN_BUDGET_CEILING
 from kernelroot.core import activity_log
 from schedulers.llm_scheduler import registry as llm_registry
 from schedulers.llm_scheduler.client import call_llm as _call_llm
@@ -48,7 +48,7 @@ class AgentBase:
                 url=self.llm["url"],
                 model=self.llm["model"],
                 messages=messages,
-                api_key=self.llm.get("api_key", ""),
+                api_key=llm_registry.get_api_key(self.llm.get("provider", "custom")),
                 provider=self.llm.get("provider", "custom"),
                 max_tokens=max_tokens or self.token_budget,
             )

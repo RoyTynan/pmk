@@ -42,7 +42,6 @@ export interface LLM {
   type: LLMType
   running: boolean
   use_gpu?: boolean
-  api_key?: string
   provider?: string
   port?: number
   path?: string
@@ -108,10 +107,10 @@ export const api = {
     name: string; filename: string; port: number; use_gpu: boolean
   })                                         => fetch(`${BASE}/llms/register/local`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(j),
   llmRegisterRemote: (body: {
-    name: string; url: string; model: string; api_key?: string; provider?: string; type?: string
+    name: string; url: string; model: string; provider?: string; type?: string
   })                                         => fetch(`${BASE}/llms/register/remote`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(j),
   llmTest: (body: {
-    name: string; url: string; model: string; api_key?: string; provider?: string
+    name: string; url: string; model: string; provider?: string
   })                                         => fetch(`${BASE}/llms/test`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(j),
 
   agents:        ()                          => fetch(`${BASE}/agents`).then(j) as Promise<Agent[]>,

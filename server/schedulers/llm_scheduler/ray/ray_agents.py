@@ -5,7 +5,7 @@ Completely isolated from the existing scheduler and task queue.
 """
 import ray
 from schedulers.llm_scheduler.client import call_llm
-from schedulers.llm_scheduler import registry as llm_registry
+from schedulers.llm_scheduler import registry as llm_registry  # also provides get_api_key
 
 
 @ray.remote
@@ -22,12 +22,13 @@ def run_task(prompt: str, llm_name: str) -> dict:
 
     messages = [{"role": "user", "content": prompt}]
     try:
+        provider = llm.get("provider", "custom")
         result = call_llm(
             url=llm["url"],
             model=llm["model"],
             messages=messages,
-            api_key=llm.get("api_key", ""),
-            provider=llm.get("provider", "custom"),
+            api_key=llm_registry.get_api_key(provider),
+            provider=provider,
             max_tokens=2048,
         )
         return {"ok": True, "result": result, "error": ""}

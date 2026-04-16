@@ -1,12 +1,32 @@
 """
 registry.py — persistent LLM config backed by db/llms.db (SQLite).
 Migrates automatically from the legacy db/llms.json on first run.
+
+API keys are NOT stored in the database.
+Set them as environment variables — the server reads them at call time:
+  ANTHROPIC_API_KEY, OPENAI_API_KEY, GROQ_API_KEY, TOGETHER_API_KEY
 """
 import json
 import os
 import sqlite3
 
-from kernelroot.core.config import LLMS as DEFAULT_LLMS
+from schedulers.llm_scheduler.config import LLMS as DEFAULT_LLMS
+
+# Map provider names → environment variable names
+_PROVIDER_KEY_ENV: dict[str, str] = {
+    "anthropic": "ANTHROPIC_API_KEY",
+    "openai":    "OPENAI_API_KEY",
+    "groq":      "GROQ_API_KEY",
+    "together":  "TOGETHER_API_KEY",
+}
+
+
+def get_api_key(provider: str) -> str:
+    """Return the API key for a provider from environment variables.
+    Returns an empty string if no key is configured.
+    """
+    env_var = _PROVIDER_KEY_ENV.get((provider or "").lower(), f"{(provider or '').upper()}_API_KEY")
+    return os.environ.get(env_var, "")
 from schedulers.llm_scheduler.enums import LLMType
 from schedulers.llm_scheduler.paths import DATABASE_DIR, LLMS_DB_PATH, LLMS_JSON_PATH
 
@@ -39,9 +59,13 @@ def _init():
 
 
 def _migrate():
-    """One-time import from llms.json → llms.db, then leave json in place as backup."""
+    """One-time import from llms.json → llms.db, then leave json in place as backup.
+    Also blanks any api_key values that were stored before keys moved to env vars.
+    """
     with _conn() as conn:
         count = conn.execute("SELECT COUNT(*) FROM llms").fetchone()[0]
+        # Clear any previously stored keys — keys now come from environment variables
+        conn.execute("UPDATE llms SET api_key = '' WHERE api_key != ''")
     if count > 0:
         return  # already populated
 

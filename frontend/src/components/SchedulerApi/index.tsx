@@ -94,8 +94,8 @@ function defaultBody(method: string, isKernel: boolean, path: string): Record<st
   if (isKernel)                           return { input: '', options: { llm: '' } }
   if (path.startsWith('/tasks')           && method === 'POST') return { prompt: '', agent_type: 'echo' }
   if (path === '/llms/register/local')    return { name: '', filename: '', port: 8080, max_tasks: 1, use_gpu: true }
-  if (path === '/llms/register/remote')   return { name: '', url: '', model: '', api_key: '', provider: 'custom', max_tasks: 1 }
-  if (path === '/llms/test')              return { name: '', url: '', model: '', api_key: '', provider: 'custom' }
+  if (path === '/llms/register/remote')   return { name: '', url: '', model: '', provider: 'custom', max_tasks: 1 }
+  if (path === '/llms/test')              return { name: '', url: '', model: '', provider: 'custom' }
   if (path === '/llms/{name}/start')      return null   // path param only, no body
   if (path === '/llms/{name}/stop')       return null   // path param only, no body
   if (path.startsWith('/llms')            && method === 'POST') return { name: '', model: '' }
@@ -278,7 +278,7 @@ function SmartForm({ data, onChange, llmNames, runningLlmNames, modelFiles, open
 // TestPanel
 // ---------------------------------------------------------------------------
 
-interface LLMObj { name: string; url: string; model: string; type: string; running?: boolean; api_key?: string; provider?: string }
+interface LLMObj { name: string; url: string; model: string; type: string; running?: boolean; provider?: string }
 
 function TestPanel({
   method, url, path, isKernel, bodySchema, llmNames, modelFiles, llmObjects, inputLabel, openapi, paramOptions,
@@ -394,7 +394,6 @@ function TestPanel({
                         url:      llm.url,
                         model:    llm.model,
                         provider: llm.provider ?? 'custom',
-                        api_key:  llm.api_key ?? '',
                       }
                       setForm(next)
                       setRaw(JSON.stringify(next, null, 2))

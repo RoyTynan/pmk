@@ -10,7 +10,6 @@ import sqlite3
 import time
 import socket as _socket
 
-from kernelroot.core.config import LLM_SHORTCUTS, DEFAULT_LLM
 
 _DB_PATH: str | None = None
 
@@ -140,12 +139,21 @@ def get_next_pending_for_types(agent_types: list[str]) -> dict | None:
     return _parse_task(row) if row else None
 
 
-def get_next_pending_for_available_llm(available_llms: list[str], agent_types: list[str] | None = None) -> dict | None:
+def get_next_pending_for_available_llm(
+    available_llms: list[str],
+    agent_types: list[str] | None = None,
+    shortcuts: dict | None = None,
+    default_llm: str | None = None,
+) -> dict | None:
     """Return the next pending task whose target LLM has a free slot.
-    agent_types: if provided, only consider tasks whose agent_type is in this list.
+
+    agent_types:  if provided, only consider tasks whose agent_type is in this list.
+    shortcuts:    prompt-prefix → LLM name mapping (caller-supplied, e.g. from llm_scheduler config).
+    default_llm:  fallback LLM name when no target or shortcut matches.
     """
     if not available_llms:
         return None
+    _shortcuts = shortcuts or {}
     with _conn() as conn:
         if agent_types:
             placeholders = ",".join("?" * len(agent_types))
@@ -165,8 +173,8 @@ def get_next_pending_for_available_llm(available_llms: list[str], agent_types: l
             llm = task["target_llm"]
         else:
             first_word = task["prompt"].split()[0].lower() if task["prompt"].split() else ""
-            llm = LLM_SHORTCUTS.get(first_word, DEFAULT_LLM)
-        if llm in available_llms:
+            llm = _shortcuts.get(first_word, default_llm or (available_llms[0] if available_llms else None))
+        if llm and llm in available_llms:
             return task
     return None
 
