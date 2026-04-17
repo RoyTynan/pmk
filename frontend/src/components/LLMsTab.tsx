@@ -56,7 +56,7 @@ export default function LLMsTab() {
 
   useEffect(() => {
     api.llmModels().then(m => { setModels(m) })
-    api.systemPorts().then(p => setReservedPorts([p.monitor, p.kernel]))
+    api.systemPorts().then(p => setReservedPorts([p.monitor, p.host]))
   }, [])
 
   async function startLLM(name: string) { await api.llmStart(name) }

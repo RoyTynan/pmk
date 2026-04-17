@@ -99,9 +99,9 @@ export const api = {
     child_routing: string; aggregate: boolean
   })                                         => fetch(`${BASE}/submit`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(j),
 
-  kernelStatus:  ()                          => fetch(`${BASE}/kernel/status`).then(j) as Promise<{ running: boolean }>,
-  kernelStart:   ()                          => fetch(`${BASE}/kernel/start`, { method: 'POST' }).then(j),
-  kernelStop:    ()                          => fetch(`${BASE}/kernel/stop`,  { method: 'POST' }).then(j),
+  hostStatus:  ()                          => fetch(`${BASE}/host/status`).then(j) as Promise<{ running: boolean }>,
+  hostStart:   ()                          => fetch(`${BASE}/host/start`, { method: 'POST' }).then(j),
+  hostStop:    ()                          => fetch(`${BASE}/host/stop`,  { method: 'POST' }).then(j),
 
   multiStatus:    ()                          => fetch(`${BASE}/multi`).then(j) as Promise<{ enabled: boolean }>,
   multiOn:        ()                          => fetch(`${BASE}/multi/on`,  { method: 'POST' }).then(j),
@@ -130,7 +130,7 @@ export const api = {
 
   agents:        ()                          => fetch(`${BASE}/agents`).then(j) as Promise<Agent[]>,
 
-  systemPorts:   ()                          => fetch(`${BASE}/system/ports`).then(j) as Promise<{ monitor: number; kernel: number }>,
+  systemPorts:   ()                          => fetch(`${BASE}/system/ports`).then(j) as Promise<{ monitor: number; host: number }>,
 
   schedulers:    ()                          => fetch(`${BASE}/schedulers`).then(j) as Promise<SchedulerInfo[]>,
   assistantCreate:      (name: string)       => fetch(`${BASE}/assistant/create`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) }).then(j),

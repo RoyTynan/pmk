@@ -7,7 +7,7 @@ aggregate     = True    → waits for all children to finish, then synthesises a
 import time
 from schedulers.llm_scheduler.agents.base import AgentBase
 from schedulers.llm_scheduler import registry as llm_registry
-from kernelroot.core import task_queue
+from schedhost.core import task_queue
 
 SYSTEM_PROMPT = """You are a task planner. Given a high-level goal, break it into 2-4 concrete, self-contained subtasks.
 Output ONLY a numbered list, one subtask per line. No explanations, no headers, no extra text.

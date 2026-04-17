@@ -1,4 +1,4 @@
-# Running PMK
+# Running HostScheduler
 
 > **Before reading this:** make sure you have completed the setup steps in [setting-up.md](setting-up.md) first.
 
@@ -31,15 +31,15 @@ Windows does not run `.sh` files directly. Open two separate Command Prompt wind
 
 **Window 1 — backend:**
 ```cmd
-cd PMK
+cd HostScheduler
 .venv\Scripts\activate
 set PYTHONPATH=server
-.venv\Scripts\uvicorn kernelroot.main:app --host 0.0.0.0 --port 8000
+.venv\Scripts\uvicorn schedhost.main:app --host 0.0.0.0 --port 8000
 ```
 
 **Window 2 — frontend:**
 ```cmd
-cd PMK\frontend
+cd HostScheduler\frontend
 npm run dev
 ```
 
@@ -61,7 +61,7 @@ Once both processes are running, open your browser and go to:
 http://localhost:3000
 ```
 
-You should see the PMK interface with three top-level tabs: **kernel**, **schedulers**, and **assistant**. Clicking **schedulers** shows a second row of scheduler tabs — **llm** and **jsonparser** by default, plus any you have created. Selecting **llm** shows a third row of feature tabs: **llms**, **single**, **multi**, **agentic**, **ray**, **analyse**, **logs**, and **api**.
+You should see the HostScheduler interface with three top-level tabs: **kernel**, **schedulers**, and **assistant**. Clicking **schedulers** shows a second row of scheduler tabs — **llm** and **jsonparser** by default, plus any you have created. Selecting **llm** shows a third row of feature tabs: **llms**, **single**, **multi**, **agentic**, **ray**, **analyse**, **logs**, and **api**.
 
 A small green dot in the top bar means the browser is connected to the backend in real time. If it is red, the backend is not running.
 
@@ -102,7 +102,7 @@ Use the **clear** button (with a two-click confirmation) to wipe the log.
 
 #### Loaded schedulers
 
-A small card lists the schedulers currently loaded and running inside the kernel. Each entry shows the scheduler name. This is useful for confirming that a newly installed scheduler has been picked up without restarting.
+A small card lists the schedulers currently loaded and running inside the host. Each entry shows the scheduler name. This is useful for confirming that a newly installed scheduler has been picked up without restarting.
 
 ---
 
@@ -211,7 +211,7 @@ Cloud models are always shown as available once registered. There is no start/st
 
 ### single
 
-The single tab is the control centre for submitting tasks to the kernel. It has two sections: a task submission panel at the top, and a live task table below.
+The single tab is the control centre for submitting tasks to the host. It has two sections: a task submission panel at the top, and a live task table below.
 
 #### Submitting a task
 
@@ -380,7 +380,7 @@ The history updates automatically after each run.
 
 ### ray
 
-The ray tab gives you direct access to Ray, a distributed execution framework. It runs tasks through Ray worker processes rather than the kernel and scheduler used by the single tab — the two paths are completely separate. Ray is better suited to parallel and experimental workloads where you want direct control over how tasks are dispatched.
+The ray tab gives you direct access to Ray, a distributed execution framework. It runs tasks through Ray worker processes rather than the host and scheduler used by the single tab — the two paths are completely separate. Ray is better suited to parallel and experimental workloads where you want direct control over how tasks are dispatched.
 
 All tasks in the batch panel are dispatched to Ray simultaneously and results stream back as each one finishes — the fastest task appears first regardless of submission order. The pipeline panel runs steps sequentially, passing the output of each step to the next as `{input}`.
 
@@ -436,7 +436,7 @@ The output panel for each step shows the actual prompt that was sent (with `{inp
 
 ### analyse
 
-The analyse tab is for running a set of questions or rules against a dataset — typically a JSON file — using Ray to process all the prompts in parallel. It does not use the kernel or scheduler.
+The analyse tab is for running a set of questions or rules against a dataset — typically a JSON file — using Ray to process all the prompts in parallel. It does not use the host or scheduler.
 
 All prompts are dispatched to Ray at the same time and results stream back as each one finishes, so you see answers arriving as they complete rather than waiting for the whole batch. This makes it well suited to bulk analysis tasks where you have many questions and want answers as fast as possible.
 
@@ -503,11 +503,11 @@ The LLM sees both the question and the data together. All prompts are dispatched
 
 ### assistant
 
-The assistant tab helps you build new schedulers for the kernel. It generates a complete scaffold — folder structure, handler base class, router, database, and registry entry — in one click, wired up and ready to extend.
+The assistant tab helps you build new schedulers for the host. It generates a complete scaffold — folder structure, handler base class, router, database, and registry entry — in one click, wired up and ready to extend.
 
 At the top of the tab, enter a name for your new scheduler and click **generate**. The scaffold is written to disk immediately inside its own folder under `server/schedulers/`. The kernel does not need to be modified.
 
-Below the generator, a set of ready-made prompts is shown in a grid. Each card is a Claude Code style prompt you can copy and paste directly into your AI coding assistant to extend the scaffold — adding new handlers, new API routes, new database columns, or new agent types. The prompts are scoped to your scheduler's own folder and will not touch the kernel.
+Below the generator, a set of ready-made prompts is shown in a grid. Each card is a Claude Code style prompt you can copy and paste directly into your AI coding assistant to extend the scaffold — adding new handlers, new API routes, new database columns, or new agent types. The prompts are scoped to your scheduler's own folder and will not touch the host.
 
 ---
 
@@ -523,7 +523,7 @@ The two built-in schedulers — **llm** and **jsonparser** — can be removed if
 
 ### Removing the jsonparser scheduler
 
-**Backend** — open `server/kernelroot/scheduler_registry.py` and delete the `jsonparser` line:
+**Backend** — open `server/schedhost/scheduler_registry.py` and delete the `jsonparser` line:
 
 ```python
 "jsonparser": "schedulers.jsonparser_scheduler.scheduler.JsonParserScheduler",
@@ -552,13 +552,13 @@ And remove the `JsonParserTab` import at the top of the file.
 
 This is a larger change — the llm scheduler drives everything in the **llms**, **single**, **multi**, **agentic**, **ray**, **analyse**, **logs**, and **api** tabs.
 
-**Backend** — open `server/kernelroot/scheduler_registry.py` and delete the `llm` line:
+**Backend** — open `server/schedhost/scheduler_registry.py` and delete the `llm` line:
 
 ```python
 "llm": "schedulers.llm_scheduler.scheduler.LLMScheduler",
 ```
 
-Then open `server/kernelroot/main.py` and remove:
+Then open `server/schedhost/main.py` and remove:
 
 - All imports from `schedulers.llm_scheduler.*` (registry, client, agentic router, ray router, analyse router, traces router, paths)
 - The four `app.include_router(...)` calls for `/agentic`, `/ray`, `/analyse`, and `/traces`

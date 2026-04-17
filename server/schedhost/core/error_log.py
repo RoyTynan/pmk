@@ -17,7 +17,7 @@ import traceback
 import uuid
 from datetime import datetime
 
-from kernelroot.core.config import ERROR_LOG_PATH, TASKS_DB_PATH
+from schedhost.core.config import ERROR_LOG_PATH, TASKS_DB_PATH
 
 
 # ---------------------------------------------------------------------------
@@ -31,7 +31,7 @@ class _PlainFormatter(logging.Formatter):
 
 def _build_file_logger() -> logging.Logger:
     os.makedirs(os.path.dirname(ERROR_LOG_PATH), exist_ok=True)
-    logger = logging.getLogger("kernelroot.errors")
+    logger = logging.getLogger("schedhost.errors")
     logger.propagate = False
     logger.setLevel(logging.DEBUG)
     if not logger.handlers:
@@ -84,7 +84,7 @@ def _setup():
 def capture(exc: Exception, level: int = logging.ERROR, source: str = "") -> None:
     """Capture an exception from a kernel except-block.
 
-    Call as: error_log.capture(e, logging.ERROR, "kernelroot.module.function")
+    Call as: error_log.capture(e, logging.ERROR, "schedhost.module.function")
     Must be called from within an except block so traceback is available.
     """
     tb_str = traceback.format_exc()

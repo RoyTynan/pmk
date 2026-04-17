@@ -9,9 +9,9 @@ NAME and HANDLER_REGISTRY are read by the kernel to:
 import time
 import threading
 
-from kernelroot.core import task_queue
-from kernelroot.core.scheduler_base import SchedulerBase
-from kernelroot.core.config import POLL_INTERVAL_SECONDS
+from schedhost.core import task_queue
+from schedhost.core.scheduler_base import SchedulerBase
+from schedhost.core.config import POLL_INTERVAL_SECONDS
 from schedulers.jsonparser_scheduler.handlers.json_handler import JsonHandler
 
 MAX_CONCURRENT = 4

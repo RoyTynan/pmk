@@ -136,7 +136,7 @@ export default function SchedulerTab({ info }: { info: SchedulerInfo }) {
         {!info.registered && (
           <p className={styles.unregNote}>
             This scheduler is not registered — its task queue is inactive.
-            Re-register it from the assistant tab, then restart the kernel to resume.
+            Re-register it from the assistant tab, then restart the host to resume.
           </p>
         )}
       </div>

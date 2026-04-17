@@ -1,32 +1,32 @@
 'use client'
-import { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { api, type ErrorEntry } from '@/lib/api'
 import { useAppState } from '@/contexts/AppState'
-import styles from './KernelTab.module.css'
+import styles from './HostTab.module.css'
 
-interface KernelOp {
+interface HostOp {
   description?: string
   input_label?: string
 }
-interface KernelRoutes {
-  schedulers: Record<string, Record<string, KernelOp>>
+interface HostRoutes {
+  schedulers: Record<string, Record<string, HostOp>>
   port?: number
   available?: boolean
 }
 
-export default function KernelTab() {
-  const { kernel, tasks, activity } = useAppState()
-  const kernelUp = kernel.running
+export default function HostTab() {
+  const { host, tasks, activity } = useAppState()
+  const hostUp = host.running
 
-  const [kernelRoutes, setKernelRoutes] = useState<KernelRoutes | null>(null)
+  const [hostRoutes, setHostRoutes] = useState<HostRoutes | null>(null)
   const [loading,      setLoading]      = useState(false)
   const [acting,       setActing]       = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const kr = await fetch('/api/kernel/routes')
-      setKernelRoutes(kr.ok ? await kr.json() : { schedulers: {}, available: false })
+      const kr = await fetch('/api/host/routes')
+      setHostRoutes(kr.ok ? await kr.json() : { schedulers: {}, available: false })
     } finally {
       setLoading(false)
     }
@@ -34,18 +34,18 @@ export default function KernelTab() {
 
   useEffect(() => { load() }, [load])
 
-  async function startKernel() {
+  async function startHost() {
     setActing(true)
-    await fetch('/api/kernel/start', { method: 'POST' })
+    await fetch('/api/host/start', { method: 'POST' })
     // give it a moment to boot before re-checking
     await new Promise(r => setTimeout(r, 1500))
     await load()
     setActing(false)
   }
 
-  async function stopKernel() {
+  async function stopHost() {
     setActing(true)
-    await fetch('/api/kernel/stop', { method: 'POST' })
+    await fetch('/api/host/stop', { method: 'POST' })
     await load()
     setActing(false)
   }
@@ -97,7 +97,7 @@ export default function KernelTab() {
   const totalPages    = Math.ceil(panelTasks.length / PAGE_SIZE)
   const pagedTasks    = panelTasks.slice(taskPage * PAGE_SIZE, (taskPage + 1) * PAGE_SIZE)
 
-  const schedulerCount = Object.keys(kernelRoutes?.schedulers ?? {}).length
+  const schedulerCount = Object.keys(hostRoutes?.schedulers ?? {}).length
 
   return (
     <div className={styles.container}>
@@ -105,7 +105,7 @@ export default function KernelTab() {
       {/* ── Status + controls ──────────────────────────────────── */}
       <section className={styles.card}>
         <div className={styles.cardHead}>
-          <span className={styles.cardTitle}>Kernel</span>
+          <span className={styles.cardTitle}>Host</span>
           <button className={styles.btnRefresh} onClick={load} disabled={loading || acting}>
             {loading ? '…' : '↺'}
           </button>
@@ -115,29 +115,29 @@ export default function KernelTab() {
             <tr>
               <td>Status</td>
               <td>
-                <span className={kernelUp ? styles.statusUp : styles.statusDown}>
-                  {kernelUp ? 'running' : 'offline'}
+                <span className={hostUp ? styles.statusUp : styles.statusDown}>
+                  {hostUp ? 'running' : 'offline'}
                 </span>
               </td>
             </tr>
-            <tr><td>API port</td><td>{kernelRoutes?.port ?? 8002}</td></tr>
-            <tr><td>Schedulers</td><td>{schedulerCount > 0 ? Object.keys(kernelRoutes!.schedulers).join(', ') : '—'}</td></tr>
+            <tr><td>API port</td><td>{hostRoutes?.port ?? 8002}</td></tr>
+            <tr><td>Schedulers</td><td>{schedulerCount > 0 ? Object.keys(hostRoutes!.schedulers).join(', ') : '—'}</td></tr>
           </tbody>
         </table>
         <div className={styles.controls}>
           <button
             className={styles.btnStart}
-            onClick={startKernel}
-            disabled={acting || kernelUp}
+            onClick={startHost}
+            disabled={acting || hostUp}
           >
-            {acting && !kernelUp ? 'Starting…' : 'Start'}
+            {acting && !hostUp ? 'Starting…' : 'Start'}
           </button>
           <button
             className={styles.btnStop}
-            onClick={stopKernel}
-            disabled={acting || !kernelUp}
+            onClick={stopHost}
+            disabled={acting || !hostUp}
           >
-            {acting && kernelUp ? 'Stopping…' : 'Stop'}
+            {acting && hostUp ? 'Stopping…' : 'Stop'}
           </button>
           <button
             className={`${styles.btnExceptions} ${showErrors ? styles.btnExceptionsActive : ''}`}
@@ -272,7 +272,7 @@ export default function KernelTab() {
         </section>
       )}
 
-      {/* ── Kernel Activity log ─────────────────────────────────── */}
+      {/* ── Host Activity log ─────────────────────────────────── */}
       {(() => {
         const actTotalPages = Math.ceil(activity.length / PAGE_SIZE)
         const safeActPage   = Math.min(actPage, Math.max(0, actTotalPages - 1))
@@ -280,7 +280,7 @@ export default function KernelTab() {
         return (
           <section className={`${styles.card} ${styles.wide}`}>
             <div className={styles.cardHead}>
-              <span className={styles.cardTitle}>Kernel Activity</span>
+              <span className={styles.cardTitle}>Host Activity</span>
               <span className={styles.taskCount}>{activity.length}</span>
               <button
                 className={`${styles.btnClear} ${actClearWarn ? styles.btnClearWarn : ''}`}
@@ -406,9 +406,8 @@ export default function KernelTab() {
                     {pagedErrors.map(e => {
                       const expanded = expandedErr === e.id
                       return (
-                        <>
+                        <React.Fragment key={e.id}>
                           <tr
-                            key={e.id}
                             className={styles.errRow}
                             onClick={() => setExpandedErr(expanded ? null : e.id)}
                             title={e.traceback ? 'click to toggle traceback' : undefined}
@@ -426,7 +425,7 @@ export default function KernelTab() {
                               </td>
                             </tr>
                           )}
-                        </>
+                        </React.Fragment>
                       )
                     })}
                   </tbody>
@@ -450,7 +449,7 @@ export default function KernelTab() {
           <div className={styles.cardHead}>
             <span className={styles.cardTitle}>Loaded Schedulers</span>
           </div>
-          {Object.entries(kernelRoutes!.schedulers).map(([name, ops]) => (
+          {Object.entries(hostRoutes!.schedulers).map(([name, ops]) => (
             <div key={name} className={styles.schedBlock}>
               <div className={styles.schedName}>{name}</div>
               <table className={styles.opTable}>

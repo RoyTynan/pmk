@@ -512,9 +512,9 @@ function RouteRow({
 export default function SchedulerApi({ scheduler, monitorPrefixes = [] }: Props) {
   const { llms: liveLlms, tasks: liveTasks } = useAppState()
 
-  const [kernelOps,     setKernelOps]     = useState<Record<string, KernelOp> | null>(null)
+  const [hostOps,     setKernelOps]     = useState<Record<string, KernelOp> | null>(null)
   const [monitorRoutes, setMonitorRoutes] = useState<MonitorRoute[]>([])
-  const [kernelPort,    setKernelPort]    = useState<number>(8002)
+  const [hostPort,    setKernelPort]    = useState<number>(8002)
   const [modelFiles,    setModelFiles]    = useState<{ name: string; type: string }[]>([])
   const [openapi,       setOpenapi]       = useState<Record<string, unknown> | null>(null)
   const [loading,       setLoading]       = useState(false)
@@ -533,7 +533,7 @@ export default function SchedulerApi({ scheduler, monitorPrefixes = [] }: Props)
   useEffect(() => {
     setLoading(true)
     Promise.all([
-      fetch('/api/kernel/routes').then(r => r.ok ? r.json() : null),
+      fetch('/api/host/routes').then(r => r.ok ? r.json() : null),
       fetch('/api/routes').then(r => r.ok ? r.json() : []),
       fetch('/api/openapi.json').then(r => r.ok ? r.json() : null),
       fetch('/api/llms/models').then(r => r.ok ? r.json() : []),
@@ -553,7 +553,7 @@ export default function SchedulerApi({ scheduler, monitorPrefixes = [] }: Props)
 
   if (loading) return <p className={styles.muted}>Loading…</p>
 
-  const kernelEntries = Object.entries(kernelOps ?? {})
+  const hostEntries = Object.entries(hostOps ?? {})
 
   return (
     <div className={styles.container}>
@@ -588,21 +588,21 @@ export default function SchedulerApi({ scheduler, monitorPrefixes = [] }: Props)
       <section className={styles.section}>
         <div className={styles.sectionHead}>
           <span className={styles.sectionTitle}>Kernel API — {scheduler}</span>
-          <span className={styles.pill}>port {kernelPort}</span>
+          <span className={styles.pill}>port {hostPort}</span>
         </div>
-        {kernelEntries.length === 0 ? (
-          <p className={styles.muted}>No kernel operations registered.</p>
+        {hostEntries.length === 0 ? (
+          <p className={styles.muted}>No host operations registered.</p>
         ) : (
           <table className={styles.table}>
             <thead><tr><th>Method</th><th>Route</th><th>Description</th><th></th></tr></thead>
             <tbody>
-              {kernelEntries.map(([op, meta]) => (
+              {hostEntries.map(([op, meta]) => (
                 <RouteRow
                   key={op}
                   method="POST"
                   path={`/${scheduler}/${op}`}
                   label={meta.description ?? op}
-                  url={`/api/kernel/proxy/${scheduler}/${op}`}
+                  url={`/api/host/proxy/${scheduler}/${op}`}
                   isKernel={true}
                   bodySchema={defaultBody('POST', true, `/${scheduler}/${op}`)}
                   llmNames={llmNames}

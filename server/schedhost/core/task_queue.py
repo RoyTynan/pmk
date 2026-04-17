@@ -11,7 +11,7 @@ import sqlite3
 import time
 import socket as _socket
 
-from kernelroot.core import error_log
+from schedhost.core import error_log
 
 
 _DB_PATH: str | None = None
@@ -87,17 +87,17 @@ def _notify():
         s.sendall(b"change\n")
         s.close()
     except Exception as e:
-        error_log.capture(e, logging.WARNING, "kernelroot.core.task_queue._notify")
+        error_log.capture(e, logging.WARNING, "schedhost.core.task_queue._notify")
 
 
 def _parse_task(row) -> dict:
-    """Convert a sqlite3.Row to a dict, deserializing the options JSON field."""
+    """Convert a sqlite3.Row to a dict, deserialising the options JSON field."""
     t = dict(row)
     if t.get("options"):
         try:
             t["options"] = json.loads(t["options"])
         except Exception as e:
-            error_log.capture(e, logging.ERROR, "kernelroot.core.task_queue._parse_task")
+            error_log.capture(e, logging.ERROR, "schedhost.core.task_queue._parse_task")
             t["options"] = {}
     return t
 

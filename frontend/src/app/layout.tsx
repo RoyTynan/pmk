@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'PMK',
-  description: 'PMK control panel',
+  title: 'HostScheduler',
+  description: 'HostScheduler control panel',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { ModalProvider } from '@/components/Modal'
 import { AppStateProvider, useAppState } from '@/contexts/AppState'
 import TopBar from '@/components/TopBar'
-import KernelTab from '@/components/KernelTab'
+import HostTab from '@/components/HostTab'
 import MonitorTab from '@/components/MonitorTab'
 import LLMsTab from '@/components/LLMsTab'
 import LogsTab from '@/components/LogsTab'
@@ -18,10 +18,10 @@ import SchedulerTab from '@/components/SchedulerTab'
 import { api, type SchedulerInfo } from '@/lib/api'
 import styles from './page.module.css'
 
-type L1Tab = 'kernel' | 'schedulers' | 'assistant'
+type L1Tab = 'host' | 'schedulers' | 'assistant'
 type L3Tab = 'llms' | 'single' | 'multi' | 'agentic' | 'ray' | 'analyse' | 'logs' | 'api'
 
-const L1_TABS: L1Tab[] = ['kernel', 'schedulers', 'assistant']
+const L1_TABS: L1Tab[] = ['host', 'schedulers', 'assistant']
 const L3_TABS: L3Tab[] = ['llms', 'single', 'multi', 'agentic', 'ray', 'analyse', 'logs', 'api']
 
 const BUILTIN_L2 = ['llm', 'jsonparser']
@@ -37,7 +37,7 @@ function WsDot() {
 }
 
 function App() {
-  const [l1, setL1] = useState<L1Tab>('kernel')
+  const [l1, setL1] = useState<L1Tab>('host')
   const [l2, setL2] = useState<string>('llm')
   const [l3, setL3] = useState<L3Tab>('llms')
   const [userSchedulers, setUserSchedulers] = useState<SchedulerInfo[]>([])
@@ -66,8 +66,8 @@ function App() {
       <div className={styles.l1Content}>
 
         {/* ── Kernel ──────────────────────────────────────────── */}
-        <div style={{ display: l1 === 'kernel' ? undefined : 'none' }}>
-          <KernelTab />
+        <div style={{ display: l1 === 'host' ? undefined : 'none' }}>
+          <HostTab />
         </div>
 
         {/* ── Schedulers ──────────────────────────────────────── */}

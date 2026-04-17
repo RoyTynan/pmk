@@ -7,14 +7,14 @@ interface Props {
 }
 
 export default function TopBar({ wsDot }: Props) {
-  const { kernel } = useAppState()
+  const { host } = useAppState()
 
   return (
     <div className={styles.bar}>
-      <h1 className={styles.title}>PMK {wsDot}</h1>
+      <h1 className={styles.title}>HostScheduler {wsDot}</h1>
       <div className={styles.sys}>
-        <span className={`${styles.kernelStatus} ${kernel.running ? styles.kernelOn : styles.kernelOff}`}>
-          {kernel.running ? 'kernel ● running' : 'kernel ○ stopped'}
+        <span className={`${styles.hostStatus} ${host.running ? styles.hostOn : styles.hostOff}`}>
+          {host.running ? 'host ● running' : 'host ○ stopped'}
         </span>
       </div>
     </div>

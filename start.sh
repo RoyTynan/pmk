@@ -1,5 +1,5 @@
 #!/bin/bash
-# start.sh — boot the PMK monitor (FastAPI) and Next.js frontend
+# start.sh — boot the HostScheduler monitor (FastAPI) and Next.js frontend
 cd "$(dirname "$0")"
 
 # Load environment variables from .env if present
@@ -8,12 +8,12 @@ set -a
 set +a
 
 MONITOR_PORT=${MONITOR_PORT:-8000}
-KERNEL_PORT=${KERNEL_PORT:-8002}
+HOST_PORT=${HOST_PORT:-8002}
 PORT=${PORT:-3000}
 
 # Start FastAPI backend in background (PYTHONPATH=server so imports resolve)
-PYTHONPATH=server MONITOR_PORT=$MONITOR_PORT KERNEL_PORT=$KERNEL_PORT \
-  .venv/bin/uvicorn kernelroot.main:app --host 0.0.0.0 --port $MONITOR_PORT &
+PYTHONPATH=server MONITOR_PORT=$MONITOR_PORT HOST_PORT=$HOST_PORT \
+  .venv/bin/uvicorn schedhost.main:app --host 0.0.0.0 --port $MONITOR_PORT &
 BACKEND_PID=$!
 
 # Wait for backend to be ready before starting the frontend
@@ -28,9 +28,9 @@ FRONTEND_PID=$!
 
 cd ..
 echo ""
-echo "PMK running:"
+echo "HostScheduler running:"
 echo "  backend  → http://localhost:$MONITOR_PORT"
-echo "  kernel   → http://localhost:$KERNEL_PORT  (started by backend)"
+echo "  host     → http://localhost:$HOST_PORT  (started by backend)"
 echo "  frontend → http://localhost:$PORT"
 echo ""
 echo "Press Ctrl+C to stop both."

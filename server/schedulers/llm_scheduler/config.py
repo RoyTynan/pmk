@@ -1,10 +1,10 @@
 """
 LLM-scheduler configuration.
-All LLM-specific constants live here — nothing in kernelroot/ should import these.
+All LLM-specific constants live here — nothing in schedhost/ should import these.
 """
 import os
 
-from kernelroot.core.config import REPO_DIR
+from schedhost.core.config import REPO_DIR
 
 # ---------------------------------------------------------------------------
 # Embedding server

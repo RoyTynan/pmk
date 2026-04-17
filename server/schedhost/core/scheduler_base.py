@@ -56,7 +56,7 @@ class SchedulerBase:
         Call from _run_task() finally block to ensure every dispatch is logged.
         """
         try:
-            from kernelroot.core import activity_log
+            from schedhost.core import activity_log
             activity_log.log(
                 llm=f"{self.NAME}/{operation}",
                 model=operation,

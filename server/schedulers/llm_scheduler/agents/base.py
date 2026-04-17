@@ -6,7 +6,7 @@ Agents can spawn child tasks via spawn_task() for IPC.
 """
 import time
 from schedulers.llm_scheduler.config import DEFAULT_LLM, DEFAULT_MAX_TOKENS, TOKEN_BUDGET_CEILING
-from kernelroot.core import activity_log
+from schedhost.core import activity_log
 from schedulers.llm_scheduler import registry as llm_registry
 from schedulers.llm_scheduler.client import call_llm as _call_llm
 
@@ -26,7 +26,7 @@ class AgentBase:
 
     def spawn_task(self, prompt: str, agent_type: str = "echo", llm: str = None) -> str:
         """Spawn a child task. Returns the new task ID."""
-        from kernelroot.core import task_queue
+        from schedhost.core import task_queue
         return task_queue.add_task(
             prompt=prompt,
             agent_type=agent_type,

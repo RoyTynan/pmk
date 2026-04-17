@@ -11,13 +11,13 @@ import time
 import threading
 import uuid
 
-from kernelroot.core import task_queue
+from schedhost.core import task_queue
 from schedulers.llm_scheduler import registry as llm_registry
-from kernelroot.core.scheduler_base import SchedulerBase
-from kernelroot.core.handler_base import HandlerBase
+from schedhost.core.scheduler_base import SchedulerBase
+from schedhost.core.handler_base import HandlerBase
 from schedulers.llm_scheduler.agents.echo_agent import EchoAgent
 from schedulers.llm_scheduler.agents.planner import PlannerAgent
-from kernelroot.core.config import POLL_INTERVAL_SECONDS
+from schedhost.core.config import POLL_INTERVAL_SECONDS
 from schedulers.llm_scheduler.config import DEFAULT_LLM, LLM_SHORTCUTS
 
 

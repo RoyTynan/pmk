@@ -1,6 +1,6 @@
 # Built-in Schedulers
 
-PMK ships with two schedulers that run side by side and demonstrate the breadth of the pluggable scheduler pattern. Both read from the same shared task queue; neither is aware of the other.
+HostScheduler ships with two schedulers that run side by side and demonstrate the breadth of the pluggable scheduler pattern. Both read from the same shared task queue; neither is aware of the other.
 
 ---
 

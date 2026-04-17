@@ -42,7 +42,7 @@ function MethodBadge({ method }: { method: string }) {
 
 export default function ApiTab() {
   const [monitorRoutes, setMonitorRoutes]   = useState<MonitorRoute[] | null>(null)
-  const [kernelRoutes,  setKernelRoutes]    = useState<KernelRoutes  | null>(null)
+  const [hostRoutes,  setKernelRoutes]    = useState<KernelRoutes  | null>(null)
   const [loading,       setLoading]         = useState(false)
   const [error,         setError]           = useState<string | null>(null)
 
@@ -52,7 +52,7 @@ export default function ApiTab() {
     try {
       const [mRes, kRes] = await Promise.all([
         fetch('/api/routes'),
-        fetch('/api/kernel/routes'),
+        fetch('/api/host/routes'),
       ])
       setMonitorRoutes(mRes.ok ? await mRes.json() : [])
       setKernelRoutes(kRes.ok  ? await kRes.json() : { schedulers: {}, available: false })
@@ -65,7 +65,7 @@ export default function ApiTab() {
 
   useEffect(() => { load() }, [load])
 
-  const kernelUp = kernelRoutes?.available !== false && kernelRoutes && Object.keys(kernelRoutes.schedulers ?? {}).length > 0
+  const hostUp = hostRoutes?.available !== false && hostRoutes && Object.keys(hostRoutes.schedulers ?? {}).length > 0
 
   return (
     <div className={styles.container}>
@@ -108,20 +108,20 @@ export default function ApiTab() {
       <section className={styles.section}>
         <div className={styles.sectionHead}>
           <span className={styles.sectionTitle}>Kernel API</span>
-          <span className={styles.pill}>port {kernelRoutes?.port ?? 8002}</span>
-          {!kernelUp && kernelRoutes !== null && (
-            <span className={styles.pillWarn}>kernel offline</span>
+          <span className={styles.pill}>port {hostRoutes?.port ?? 8002}</span>
+          {!hostUp && hostRoutes !== null && (
+            <span className={styles.pillWarn}>host offline</span>
           )}
         </div>
         <p className={styles.sectionNote}>
           Execution-plane endpoints — auto-generated from scheduler handler registries.
         </p>
-        {kernelRoutes === null ? (
+        {hostRoutes === null ? (
           <p className={styles.empty}>Loading…</p>
-        ) : !kernelUp ? (
+        ) : !hostUp ? (
           <p className={styles.empty}>Kernel HTTP server not reachable.</p>
         ) : (
-          Object.entries(kernelRoutes.schedulers).map(([schedName, ops]) => (
+          Object.entries(hostRoutes.schedulers).map(([schedName, ops]) => (
             <div key={schedName} className={styles.schedulerBlock}>
               <div className={styles.schedulerName}>{schedName}</div>
               <table className={styles.routeTable}>

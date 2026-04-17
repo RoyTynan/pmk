@@ -1,5 +1,5 @@
 """
-main.py — web control panel for PMK.
+main.py — web control panel for HostScheduler.
 
     ./start.sh          (recommended)
     .venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000
@@ -22,7 +22,7 @@ from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconn
 from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel
 
-from kernelroot.core import task_queue, activity_log, error_log
+from schedhost.core import task_queue, activity_log, error_log
 from schedulers.llm_scheduler import registry as llm_registry
 from schedulers.llm_scheduler.client import acall_llm, ANTHROPIC_VERSION
 from schedulers.llm_scheduler.agentic.router import router as agentic_router
@@ -31,10 +31,10 @@ from schedulers.llm_scheduler.analyse.router import router as analyse_router
 from schedulers.llm_scheduler.traces.router import router as traces_router
 from schedulers.llm_scheduler.traces.store import init_db as init_traces_db
 from schedulers.llm_scheduler.paths import LOGS_DIR
-from kernelroot.core.config import TASKS_DB_PATH, BASE_DIR
+from schedhost.core.config import TASKS_DB_PATH, BASE_DIR
 from schedulers.llm_scheduler.config import DEFAULT_LLM, LLAMA_SERVER_PATH, LLM_MODELS_DIR
-from kernelroot.scheduler_registry import SCHEDULER_MAP as _SCHEDULER_MAP
-from kernelroot.router_registry import ROUTERS as _SCHEDULER_ROUTERS
+from schedhost.scheduler_registry import SCHEDULER_MAP as _SCHEDULER_MAP
+from schedhost.router_registry import ROUTERS as _SCHEDULER_ROUTERS
 
 task_queue.init(TASKS_DB_PATH)
 
@@ -45,7 +45,7 @@ def _clean_exit(signum, frame):
         devnull = open(os.devnull, "w")
         os.dup2(devnull.fileno(), 2)
     except Exception as e:
-        error_log.capture(e, logging.WARNING, "kernelroot.main._clean_exit")
+        error_log.capture(e, logging.WARNING, "schedhost.main._clean_exit")
     os._exit(0)
 
 app = FastAPI()
@@ -60,12 +60,12 @@ for _mod_path, _attr in _SCHEDULER_ROUTERS:
         _mod = importlib.import_module(_mod_path)
         app.include_router(getattr(_mod, _attr))
     except Exception as _e:
-        error_log.capture(_e, logging.WARNING, f"kernelroot.main [router:{_mod_path}]")
+        error_log.capture(_e, logging.WARNING, f"schedhost.main [router:{_mod_path}]")
         print(f"[main] warning: could not load router {_mod_path}: {_e}")
 
 init_traces_db()
 
-_kernel_proc: subprocess.Popen | None = None
+_host_proc: subprocess.Popen | None = None
 _llm_procs:   dict[str, subprocess.Popen] = {}
 
 
@@ -93,7 +93,7 @@ class _WsManager:
             try:
                 await client.send_json(data)
             except Exception as e:
-                error_log.capture(e, logging.WARNING, "kernelroot.main._WsManager.broadcast")
+                error_log.capture(e, logging.WARNING, "schedhost.main._WsManager.broadcast")
                 dead.append(client)
         for d in dead:
             self.disconnect(d)
@@ -132,7 +132,7 @@ def _snapshot() -> dict:
         "tasks":    tasks,
         "activity": activity,
         "llms":     llms_data,
-        "kernel":   {"running": _kernel_proc is not None and _kernel_proc.poll() is None},
+        "host":   {"running": _host_proc is not None and _host_proc.poll() is None},
         "multi":    {"enabled": False},
     }
 
@@ -150,7 +150,7 @@ async def _ipc_client(reader: asyncio.StreamReader, _writer: asyncio.StreamWrite
                 break
             await _push_queue.put("change")
     except Exception as e:
-        error_log.capture(e, logging.WARNING, "kernelroot.main._ipc_client")
+        error_log.capture(e, logging.WARNING, "schedhost.main._ipc_client")
 
 
 async def _push_worker():
@@ -165,7 +165,7 @@ async def _push_worker():
 
 @app.on_event("startup")
 async def _startup():
-    global _loop, _kernel_proc
+    global _loop, _host_proc
     _loop = asyncio.get_running_loop()
     ipc = await asyncio.start_server(_ipc_client, "127.0.0.1", 8001)
     asyncio.create_task(ipc.serve_forever())
@@ -174,11 +174,11 @@ async def _startup():
     signal.signal(signal.SIGTERM, _clean_exit)
     signal.signal(signal.SIGINT,  _clean_exit)
     # Start the kernel automatically and push state to AppState
-    kernel_path  = os.path.join(BASE_DIR, "kernelroot", "kernel.py")
-    kernel_env   = os.environ.copy()
-    kernel_env["PYTHONPATH"] = BASE_DIR  # absolute path so it works regardless of cwd
-    kernel_env["KERNEL_SCHEDULERS"] = ",".join(_SCHEDULER_MAP.keys())
-    _kernel_proc = subprocess.Popen([sys.executable, kernel_path], cwd=BASE_DIR, env=kernel_env)
+    host_path  = os.path.join(BASE_DIR, "schedhost", "host.py")
+    host_env   = os.environ.copy()
+    host_env["PYTHONPATH"] = BASE_DIR  # absolute path so it works regardless of cwd
+    host_env["HOST_SCHEDULERS"] = ",".join(_SCHEDULER_MAP.keys())
+    _host_proc = subprocess.Popen([sys.executable, host_path], cwd=BASE_DIR, env=host_env)
     _notify()
 
 
@@ -196,7 +196,7 @@ async def ws_endpoint(ws: WebSocket):
     except WebSocketDisconnect:
         pass
     except Exception as e:
-        error_log.capture(e, logging.WARNING, "kernelroot.main.ws_endpoint")
+        error_log.capture(e, logging.WARNING, "schedhost.main.ws_endpoint")
     finally:
         _ws_manager.disconnect(ws)
 
@@ -274,7 +274,7 @@ def test_error():
         try:
             raise RuntimeError(f"test exception at {name} level")
         except Exception as e:
-            error_log.capture(e, level, "kernelroot.main.test_error")
+            error_log.capture(e, level, "schedhost.main.test_error")
             results.append(name)
     return {"ok": True, "logged": results}
 
@@ -474,7 +474,7 @@ def test_connection(req: RegisterRemoteRequest):
         try:
             body = r.json()
         except Exception as e:
-            error_log.capture(e, logging.WARNING, "kernelroot.main.test_connection")
+            error_log.capture(e, logging.WARNING, "schedhost.main.test_connection")
             body = r.text
         if r.status_code < 400:
             return {"ok": True, "data": body}
@@ -484,7 +484,7 @@ def test_connection(req: RegisterRemoteRequest):
             msg = body or f"HTTP {r.status_code}"
         return {"ok": False, "error": msg, "data": body}
     except Exception as e:
-        error_log.capture(e, logging.ERROR, "kernelroot.main.test_connection")
+        error_log.capture(e, logging.ERROR, "schedhost.main.test_connection")
         return {"ok": False, "error": str(e)}
 
 
@@ -556,7 +556,7 @@ def stop_llm(name: str):
 
 
 # ---------------------------------------------------------------------------
-# Kernel control
+# Host control
 # ---------------------------------------------------------------------------
 
 @app.get("/status")
@@ -577,72 +577,72 @@ def system_status():
             "running": running,
         })
 
-    kernel_running = _kernel_proc is not None and _kernel_proc.poll() is None
+    host_running = _host_proc is not None and _host_proc.poll() is None
 
     return {
-        "kernel":       {"running": kernel_running},
+        "host":       {"running": host_running},
         "llms":         llms_all,
         "llms_running": [l for l in llms_all if l["running"]],
     }
 
 
-@app.get("/kernel/status")
-def kernel_status():
-    return {"running": _kernel_proc is not None and _kernel_proc.poll() is None}
+@app.get("/host/status")
+def host_status():
+    return {"running": _host_proc is not None and _host_proc.poll() is None}
 
 
-@app.post("/kernel/start")
-def kernel_start():
-    global _kernel_proc
-    if _kernel_proc and _kernel_proc.poll() is None:
+@app.post("/host/start")
+def host_start():
+    global _host_proc
+    if _host_proc and _host_proc.poll() is None:
         return {"started": False, "reason": "already running"}
-    kernel_path  = os.path.join(BASE_DIR, "kernelroot", "kernel.py")
-    kernel_env   = os.environ.copy()
-    kernel_env["PYTHONPATH"] = BASE_DIR  # absolute path so it works regardless of cwd
-    kernel_env["KERNEL_SCHEDULERS"] = ",".join(_SCHEDULER_MAP.keys())
-    _kernel_proc = subprocess.Popen([sys.executable, kernel_path], cwd=BASE_DIR, env=kernel_env)
+    host_path  = os.path.join(BASE_DIR, "schedhost", "host.py")
+    host_env   = os.environ.copy()
+    host_env["PYTHONPATH"] = BASE_DIR  # absolute path so it works regardless of cwd
+    host_env["HOST_SCHEDULERS"] = ",".join(_SCHEDULER_MAP.keys())
+    _host_proc = subprocess.Popen([sys.executable, host_path], cwd=BASE_DIR, env=host_env)
     _notify()
-    return {"started": True, "pid": _kernel_proc.pid}
+    return {"started": True, "pid": _host_proc.pid}
 
 
-@app.post("/kernel/stop")
-def kernel_stop():
-    global _kernel_proc
-    if _kernel_proc and _kernel_proc.poll() is None:
-        _kernel_proc.terminate(); _kernel_proc.wait()
+@app.post("/host/stop")
+def host_stop():
+    global _host_proc
+    if _host_proc and _host_proc.poll() is None:
+        _host_proc.terminate(); _host_proc.wait()
         _notify()
         return {"stopped": True}
     return {"stopped": False, "reason": "not running"}
 
 
-@app.api_route("/kernel/proxy/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"], include_in_schema=False)
-async def kernel_proxy(path: str, request: Request):
-    """Generic proxy — forwards any method + body to the kernel API."""
-    kernel_port = int(os.environ.get("KERNEL_PORT", 8002))
+@app.api_route("/host/proxy/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"], include_in_schema=False)
+async def host_proxy(path: str, request: Request):
+    """Generic proxy — forwards any method + body to the host API."""
+    host_port = int(os.environ.get("HOST_PORT", 8002))
     body = await request.body()
     try:
         r = httpx.request(
             request.method,
-            f"http://localhost:{kernel_port}/{path}",
+            f"http://localhost:{host_port}/{path}",
             content=body,
             headers={"content-type": "application/json"},
             timeout=30.0,
         )
         return Response(content=r.content, status_code=r.status_code, media_type="application/json")
     except Exception as e:
-        error_log.capture(e, logging.ERROR, "kernelroot.main.kernel_proxy")
+        error_log.capture(e, logging.ERROR, "schedhost.main.host_proxy")
         return Response(content=json.dumps({"error": str(e)}), status_code=502, media_type="application/json")
 
 
-@app.get("/kernel/routes")
-def kernel_routes():
-    """Proxy to the kernel API index — returns all auto-generated operations."""
-    kernel_port = int(os.environ.get("KERNEL_PORT", 8002))
+@app.get("/host/routes")
+def host_routes():
+    """Proxy to the host API index — returns all auto-generated operations."""
+    host_port = int(os.environ.get("HOST_PORT", 8002))
     try:
-        r = httpx.get(f"http://localhost:{kernel_port}/", timeout=2.0)
+        r = httpx.get(f"http://localhost:{host_port}/", timeout=2.0)
         return r.json()
     except Exception as e:
-        error_log.capture(e, logging.WARNING, "kernelroot.main.kernel_routes")
+        error_log.capture(e, logging.WARNING, "schedhost.main.host_routes")
         return {"schedulers": {}, "available": False}
 
 
@@ -655,7 +655,7 @@ def system_ports():
     """Return ports reserved by the app — used by the frontend to block clashing LLM ports."""
     return {
         "monitor": int(os.environ.get("MONITOR_PORT", 8000)),
-        "kernel":  int(os.environ.get("KERNEL_PORT",  8002)),
+        "host":  int(os.environ.get("HOST_PORT",  8002)),
     }
 
 
@@ -699,7 +699,7 @@ def _scheduler_info(name: str, folder: str, builtin: bool) -> dict:
         cls = getattr(mod, cls_name)
         info = dict(getattr(cls, "SCHEDULER_INFO", {"name": name, "label": name.capitalize(), "api": []}))
     except Exception as e:
-        error_log.capture(e, logging.WARNING, f"kernelroot.main._scheduler_info [{name}]")
+        error_log.capture(e, logging.WARNING, f"schedhost.main._scheduler_info [{name}]")
         info = {"name": name, "label": name.capitalize(), "api": []}
     info["registered"] = registered
     info["builtin"]    = builtin
@@ -737,7 +737,7 @@ def list_schedulers():
 # Scheduler assistant
 # ---------------------------------------------------------------------------
 
-from kernelroot.scaffolding.scaffolding import (
+from schedhost.scaffolding.scaffolding import (
     generate_scheduler    as _generate_scheduler,
     unregister_scheduler  as _unregister_scheduler_impl,
     update_scheduler_registry as _update_scheduler_registry,
@@ -766,12 +766,12 @@ def unregister_scheduler(name: str):
         _unregister_scheduler(name)
     # Ask the kernel to stop the scheduler thread via its API
     scheduler_stopped = False
-    kernel_port = int(os.environ.get("KERNEL_PORT", 8002))
+    host_port = int(os.environ.get("HOST_PORT", 8002))
     try:
-        r = httpx.post(f"http://localhost:{kernel_port}/schedulers/{name}/stop", timeout=5.0)
+        r = httpx.post(f"http://localhost:{host_port}/schedulers/{name}/stop", timeout=5.0)
         scheduler_stopped = r.json().get("ok", False)
     except Exception as e:
-        error_log.capture(e, logging.WARNING, "kernelroot.main.unregister_scheduler")
+        error_log.capture(e, logging.WARNING, "schedhost.main.unregister_scheduler")
     return {"ok": True, "unregistered": f"schedulers/{folder}", "scheduler_stopped": scheduler_stopped}
 
 
@@ -805,21 +805,21 @@ def register_scheduler(name: str):
             router_mod = importlib.import_module(mod_path)
             app.include_router(getattr(router_mod, "router"))
         except Exception as e:
-            error_log.capture(e, logging.WARNING, "kernelroot.main.register_scheduler")
+            error_log.capture(e, logging.WARNING, "schedhost.main.register_scheduler")
             print(f"[assistant] warning: could not hot-load router: {e}")
     else:
         # For built-ins, just restore the in-memory map
         _SCHEDULER_MAP[name] = dotted
 
     # Ask the running kernel to start the scheduler thread immediately
-    kernel_port = int(os.environ.get("KERNEL_PORT", 8002))
+    host_port = int(os.environ.get("HOST_PORT", 8002))
     scheduler_started = False
     try:
-        r = httpx.post(f"http://localhost:{kernel_port}/schedulers/{name}/start",
+        r = httpx.post(f"http://localhost:{host_port}/schedulers/{name}/start",
                        json={"dotted": dotted}, timeout=5.0)
         scheduler_started = r.json().get("ok", False)
     except Exception as e:
-        error_log.capture(e, logging.WARNING, "kernelroot.main.register_scheduler")
+        error_log.capture(e, logging.WARNING, "schedhost.main.register_scheduler")
 
     return {"ok": True, "registered": f"schedulers/{folder}", "scheduler_started": scheduler_started}
 
@@ -854,7 +854,7 @@ def create_scheduler(req: CreateSchedulerRequest):
         router_mod = importlib.import_module(mod_path)
         app.include_router(getattr(router_mod, "router"))
     except Exception as e:
-        error_log.capture(e, logging.WARNING, "kernelroot.main.create_scheduler")
+        error_log.capture(e, logging.WARNING, "schedhost.main.create_scheduler")
         print(f"[assistant] warning: could not hot-load router: {e}")
 
     return result
@@ -894,7 +894,7 @@ async def _run_pipeline(steps: list[PipelineStep]):
             result = await acall_llm(url, model, history, api_key, provider)
             result = result.strip()
         except Exception as exc:
-            error_log.capture(exc, logging.ERROR, f"kernelroot.main._run_pipeline [{step.name}]")
+            error_log.capture(exc, logging.ERROR, f"schedhost.main._run_pipeline [{step.name}]")
             ok, err_str, result = False, str(exc), f"[error: {exc}]"
         finally:
             activity_log.log(

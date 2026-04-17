@@ -1,5 +1,5 @@
 """
-kernel.py — entry point for the PMK task processing engine.
+host.py — entry point for the HostScheduler task processing engine.
 
 Loads one or more schedulers, runs each in its own thread, and starts a
 FastAPI HTTP server that auto-generates endpoints from each scheduler's
@@ -7,17 +7,17 @@ HANDLER_REGISTRY. No manual router code is needed — adding a scheduler
 with a populated HANDLER_REGISTRY automatically creates public API routes.
 
 Scheduler selection:
-    KERNEL_SCHEDULERS=llm,file   (comma-separated, default: llm,file)
+    HOST_SCHEDULERS=llm,file   (comma-separated, default: llm,file)
 
 Kernel API port:
-    KERNEL_PORT=8002             (default: 8002)
+    HOST_PORT=8002             (default: 8002)
 
 Built-in scheduler names:
     llm    — LLMScheduler  (LLM agents)
     jsonparser — JsonParserScheduler (JSON parsing handlers)
 
 Custom schedulers can be loaded by dotted class path:
-    KERNEL_SCHEDULERS=mypackage.mymodule.MyScheduler
+    HOST_SCHEDULERS=mypackage.mymodule.MyScheduler
 """
 import importlib
 import logging
@@ -29,13 +29,13 @@ import uvicorn
 from fastapi import FastAPI
 from pydantic import BaseModel
 
-from kernelroot.core import task_queue, error_log
-from kernelroot.core.config import TASKS_DB_PATH
-from kernelroot.scheduler_registry import SCHEDULER_MAP
+from schedhost.core import task_queue, error_log
+from schedhost.core.config import TASKS_DB_PATH
+from schedhost.scheduler_registry import SCHEDULER_MAP
 
 task_queue.init(TASKS_DB_PATH)
 
-KERNEL_PORT = int(os.environ.get("KERNEL_PORT", 8002))
+HOST_PORT = int(os.environ.get("HOST_PORT", 8002))
 
 
 # ---------------------------------------------------------------------------
@@ -62,7 +62,7 @@ def _load_scheduler_cls(name: str):
 # Kernel API — auto-generated from scheduler HANDLER_REGISTRY entries
 # ---------------------------------------------------------------------------
 
-def _build_kernel_api(loaded: dict, instances: dict) -> FastAPI:
+def _build_host_api(loaded: dict, instances: dict) -> FastAPI:
     """Build a FastAPI app with one route per handler in each scheduler."""
 
     api = FastAPI(
@@ -80,11 +80,11 @@ def _build_kernel_api(loaded: dict, instances: dict) -> FastAPI:
         if cls.HANDLER_REGISTRY
     }
 
-    @api.get("/", summary="List all kernel operations")
+    @api.get("/", summary="List all host operations")
     def index():
         return {
             "schedulers": registry_snapshot,
-            "port":       KERNEL_PORT,
+            "port":       HOST_PORT,
         }
 
     @api.post("/schedulers/{name}/stop", summary="Stop a running scheduler")
@@ -113,7 +113,7 @@ def _build_kernel_api(loaded: dict, instances: dict) -> FastAPI:
             t.start()
             return {"ok": True, "started": name}
         except Exception as e:
-            error_log.capture(e, logging.ERROR, f"kernelroot.kernel [{name}]")
+            error_log.capture(e, logging.ERROR, f"schedhost.host [{name}]")
             return {"ok": False, "error": str(e)}
 
     # one POST route per operation per scheduler
@@ -125,7 +125,7 @@ def _build_kernel_api(loaded: dict, instances: dict) -> FastAPI:
                 return {"ok": True, "result": result,
                         "scheduler": sched_name, "operation": op_name}
             except Exception as e:
-                error_log.capture(e, logging.ERROR, f"kernelroot.kernel [{sched_name}.{op_name}]")
+                error_log.capture(e, logging.ERROR, f"schedhost.host [{sched_name}.{op_name}]")
                 return {"ok": False, "error": str(e),
                         "scheduler": sched_name, "operation": op_name}
         route.__name__ = f"{sched_name}_{op_name}"
@@ -151,10 +151,10 @@ def _build_kernel_api(loaded: dict, instances: dict) -> FastAPI:
 if __name__ == "__main__":
     recovered = task_queue.requeue_stuck_tasks()
     if recovered:
-        print(f"[kernel] recovered {recovered} stuck task(s) from previous run")
+        print(f"[host] recovered {recovered} stuck task(s) from previous run")
 
     names = [n.strip() for n in
-             os.environ.get("KERNEL_SCHEDULERS", "llm,jsonparser").split(",") if n.strip()]
+             os.environ.get("HOST_SCHEDULERS", "llm,jsonparser").split(",") if n.strip()]
 
     loaded: dict    = {}   # name → class
     instances: dict = {}   # name → instance (for stop())
@@ -165,18 +165,18 @@ if __name__ == "__main__":
         loaded[name] = cls
         scheduler = cls()
         instances[name] = scheduler
-        print(f"[kernel] starting {name} scheduler ({cls.__name__})")
+        print(f"[host] starting {name} scheduler ({cls.__name__})")
         t = threading.Thread(target=scheduler.run, daemon=True, name=f"scheduler-{name}")
         t.start()
         scheduler_threads.append(t)
 
     # Build and start the kernel API server
-    kernel_api = _build_kernel_api(loaded, instances)
-    print(f"[kernel] API server starting on port {KERNEL_PORT}")
+    host_api = _build_host_api(loaded, instances)
+    print(f"[host] API server starting on port {HOST_PORT}")
     api_thread = threading.Thread(
-        target=lambda: uvicorn.run(kernel_api, host="0.0.0.0", port=KERNEL_PORT, log_level="warning"),
+        target=lambda: uvicorn.run(host_api, host="0.0.0.0", port=HOST_PORT, log_level="warning"),
         daemon=True,
-        name="kernel-api",
+        name="host-api",
     )
     api_thread.start()
 
@@ -184,4 +184,4 @@ if __name__ == "__main__":
         for t in scheduler_threads:
             t.join()
     except KeyboardInterrupt:
-        print("\n[kernel] shutting down")
+        print("\n[host] shutting down")

@@ -2,10 +2,10 @@
 
 The backend is two separate Python processes that start together via `start.sh`:
 
-- **Control plane** (`server/kernelroot/main.py`) — FastAPI on port 8000. Owns the REST and WebSocket APIs, manages child processes (the kernel and local model servers), and pushes live state to all connected browser clients.
-- **Execution plane** (`server/kernelroot/kernel.py`) — FastAPI on port 8002. Runs the scheduler threads and exposes an auto-generated API for direct handler calls.
+- **Control plane** (`server/schedhost/main.py`) — FastAPI on port 8000. Owns the REST and WebSocket APIs, manages child processes (the host and local model servers), and pushes live state to all connected browser clients.
+- **Execution plane** (`server/schedhost/host.py`) — FastAPI on port 8002. Runs the scheduler threads and exposes an auto-generated API for direct handler calls.
 
-The two are kept separate deliberately: the kernel runs blocking poll loops and must not share the uvicorn event loop used by the control plane.
+The two are kept separate deliberately: the host runs blocking poll loops and must not share the uvicorn event loop used by the control plane.
 
 ---
 
@@ -15,15 +15,15 @@ The two are kept separate deliberately: the kernel runs blocking poll loops and 
 uvicorn (port 8000)  ←── browser WebSocket / REST
 │  main.py — control plane
 │  Spawns:
-│    ├── kernel.py         — execution plane (child process, port 8002)
+│    ├── host.py         — execution plane (child process, port 8002)
 │    └── llama-server ×N  — one per started local LLM
 │
 uvicorn (port 8002)  ←── kernel API (internal + assistant tab)
-│  kernel.py — execution plane
+│  host.py — execution plane
 │  Runs in threads:
 │    ├── scheduler ×N  — one thread per registered scheduler, each polls the task queue
 │
-SQLite (server/kernelroot/database/tasks.db)
+SQLite (server/schedhost/database/tasks.db)
 │  tasks table    — shared task queue (pending → running → done/failed)
 │  activity table — kernel activity log (all schedulers and sources)
 │
@@ -35,23 +35,23 @@ IPC (TCP 127.0.0.1:8001)
 
 ## Component detail
 
-### Control plane (`server/kernelroot/main.py`)
+### Control plane (`server/schedhost/main.py`)
 
 The FastAPI application running on port 8000. Responsibilities:
 
 - **REST API** — all HTTP endpoints: tasks, submit, LLM registration, LLM start/stop, agentic, Ray, analyse, traces, activity log, browse, scheduler list
 - **WebSocket push** — maintains connected browser clients; broadcasts a full snapshot whenever task or LLM state changes
-- **Process management** — spawns the kernel subprocess and all llama-server processes with `subprocess.Popen`; handles in `_kernel_proc` and `_llm_procs`
+- **Process management** — spawns the host subprocess and all llama-server processes with `subprocess.Popen`; handles in `_kernel_proc` and `_llm_procs`
 - **IPC server** — listens on TCP port 8001 for change notifications from the task queue; each notification triggers a WebSocket broadcast
 - **Router loading** — at startup, imports every router listed in `router_registry.py` and attaches them to the FastAPI app
 
-The control plane does not process tasks. It writes tasks to SQLite and waits for the kernel to update them.
+The control plane does not process tasks. It writes tasks to SQLite and waits for the host to update them.
 
 **Startup sequence:**
 
 1. uvicorn starts the FastAPI app
 2. `_startup()` runs: captures the event loop, starts the IPC server on port 8001, starts the WebSocket push worker, re-registers signal handlers
-3. Spawns `kernel.py` as a child process, passing `KERNEL_SCHEDULERS` from the scheduler registry
+3. Spawns `host.py` as a child process, passing `HOST_SCHEDULERS` from the scheduler registry
 
 **Signal handling:**
 
@@ -59,11 +59,11 @@ The control plane does not process tasks. It writes tasks to SQLite and waits fo
 
 ---
 
-### Execution plane (`server/kernelroot/kernel.py`)
+### Execution plane (`server/schedhost/host.py`)
 
 Runs as a child process spawned by the control plane. Responsibilities:
 
-- **Scheduler threads** — loads each scheduler listed in `KERNEL_SCHEDULERS`, instantiates it, and runs it in a daemon thread
+- **Scheduler threads** — loads each scheduler listed in `HOST_SCHEDULERS`, instantiates it, and runs it in a daemon thread
 - **Kernel API** — starts a second FastAPI app on port 8002 with auto-generated endpoints from each scheduler's `HANDLER_REGISTRY`; this is the API used by the assistant tab and for direct handler calls
 
 On startup, `requeue_stuck_tasks()` resets any tasks left in `running` state from a previous crash back to `pending`.
@@ -76,18 +76,18 @@ The kernel iterates every loaded scheduler's `HANDLER_REGISTRY` and creates one 
 
 ### Scheduler system
 
-#### SchedulerBase (`server/kernelroot/core/scheduler_base.py`)
+#### SchedulerBase (`server/schedhost/core/scheduler_base.py`)
 
 Abstract base class for all schedulers. Each subclass declares:
 
-- `NAME` — identifier string, used as the URL prefix in the kernel API
+- `NAME` — identifier string, used as the URL prefix in the host API
 - `HANDLER_REGISTRY` — maps operation names to handler metadata (handler class, description, input label, options)
 
 The base class provides:
 - `run()` — must be implemented; a blocking loop that never returns
 - `stop()` — sets a threading event that `_sleep()` checks, allowing clean shutdown
 - `_sleep(seconds)` — interruptible sleep
-- `log_activity()` — writes one row to the kernel activity log. Must be called in `_run_task()`'s `finally` block **before** `mark_done()`/`mark_failed()` so the entry exists in SQLite when the IPC change notification fires and the WebSocket snapshot is built.
+- `log_activity()` — writes one row to the host activity log. Must be called in `_run_task()`'s `finally` block **before** `mark_done()`/`mark_failed()` so the entry exists in SQLite when the IPC change notification fires and the WebSocket snapshot is built.
 
 #### Built-in schedulers
 
@@ -99,7 +99,7 @@ Two schedulers ship with the system:
 
 ---
 
-### Scheduler registry (`server/kernelroot/scheduler_registry.py`)
+### Scheduler registry (`server/schedhost/scheduler_registry.py`)
 
 Maps scheduler names to their fully-qualified class paths:
 
@@ -111,9 +111,9 @@ SCHEDULER_MAP = {
 }
 ```
 
-The control plane reads this map at startup and passes the keys as `KERNEL_SCHEDULERS` to the kernel process. The `[ASSISTANT_SCHEDULERS]` marker is where the assistant appends new scheduler entries automatically.
+The control plane reads this map at startup and passes the keys as `HOST_SCHEDULERS` to the host process. The `[ASSISTANT_SCHEDULERS]` marker is where the assistant appends new scheduler entries automatically.
 
-### Router registry (`server/kernelroot/router_registry.py`)
+### Router registry (`server/schedhost/router_registry.py`)
 
 Lists FastAPI routers from user-created schedulers that should be mounted on the control plane:
 
@@ -128,7 +128,7 @@ The control plane imports each module at startup and calls `app.include_router()
 
 ---
 
-### Task queue (`server/kernelroot/core/task_queue.py`)
+### Task queue (`server/schedhost/core/task_queue.py`)
 
 SQLite-backed persistent queue. All task state lives in `tasks.db` in the `tasks` table.
 
@@ -173,13 +173,13 @@ On kernel startup, `requeue_stuck_tasks()` resets any tasks in `running` state b
 
 ---
 
-### Activity log (`server/kernelroot/core/activity_log.py`)
+### Activity log (`server/schedhost/core/activity_log.py`)
 
 Records activity across all schedulers and kernel sources — queue, pipeline, agentic, Ray, or direct. Stored in the `activity` table in `tasks.db`.
 
 Each entry captures the handler name, model, provider, source, prompt length, result length, duration in milliseconds, and whether the call succeeded. The `clear()` function deletes all rows and is exposed via `POST /activity/clear`.
 
-Every `SchedulerBase` subclass inherits `log_activity()`, which writes to this table. Scaffolded and manually written schedulers both call it at the end of each `_run_task()` invocation. This is what drives the **Kernel Activity** panel in the kernel tab.
+Every `SchedulerBase` subclass inherits `log_activity()`, which writes to this table. Scaffolded and manually written schedulers both call it at the end of each `_run_task()` invocation. This is what drives the **Kernel Activity** panel in the host tab.
 
 
 ---
@@ -233,7 +233,7 @@ Browser → POST /submit → tasks.db (pending)
 
 **Direct kernel call (kernel API):**
 ```
-Client → POST /kernelroot/{scheduler}/{operation}  (port 8002)
+Client → POST /schedhost/{scheduler}/{operation}  (port 8002)
               ↓
          Handler.handle(input, options)
               ↓

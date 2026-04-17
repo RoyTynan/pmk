@@ -1,8 +1,8 @@
-w# Setting Up PMK
+w# Setting Up HostScheduler
 
 > Download the code first — see the [Getting the code](../README.md#getting-the-code) section in the README.
 
-PMK can be set up in two ways — **manually** or via **Docker**. Choose whichever suits you.
+HostScheduler can be set up in two ways — **manually** or via **Docker**. Choose whichever suits you.
 
 ---
 
@@ -52,7 +52,7 @@ Verify: `python3 --version` and `node --version`
 #### Linux / macOS
 
 ```bash
-cd PMK
+cd HostScheduler
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r server/requirements.txt
@@ -62,7 +62,7 @@ cd frontend && npm install && cd ..
 #### Windows
 
 ```
-cd PMK
+cd HostScheduler
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r server/requirements.txt
@@ -89,7 +89,7 @@ cd ..
 
 ### Installing llama.cpp
 
-PMK uses **llama.cpp** to run local AI models. All you need is the `llama-server` binary — install it with your OS package manager or grab a pre-built binary. You do not need to build from source unless you want GPU support on NVIDIA.
+HostScheduler uses **llama.cpp** to run local AI models. All you need is the `llama-server` binary — install it with your OS package manager or grab a pre-built binary. You do not need to build from source unless you want GPU support on NVIDIA.
 
 #### macOS — Homebrew (recommended)
 
@@ -138,7 +138,7 @@ CPU only. No CUDA or Metal support. Smaller models (1B–3B parameters) are reco
 
 ---
 
-### Telling PMK where llama-server is
+### Telling HostScheduler where llama-server is
 
 Add the binary path to your `.env` file:
 
@@ -162,7 +162,7 @@ Not sure of the path? Run `which llama-server` (macOS / Linux) or `where llama-s
 
 ### Running llama-server with a model
 
-You can start `llama-server` directly from the terminal to verify it works before using PMK:
+You can start `llama-server` directly from the terminal to verify it works before using HostScheduler:
 
 ```bash
 llama-server -m llm_models/qwen2.5-0.5b-instruct-q4_k_m.gguf --port 8081
@@ -183,7 +183,7 @@ When the model has loaded you will see:
 llama server listening at http://127.0.0.1:8081
 ```
 
-Press `Ctrl+C` to stop it. PMK starts and stops `llama-server` for you when you use the app — running it manually is just a quick way to confirm the binary and model are working.
+Press `Ctrl+C` to stop it. HostScheduler starts and stops `llama-server` for you when you use the app — running it manually is just a quick way to confirm the binary and model are working.
 
 ---
 
@@ -202,7 +202,7 @@ Download it from Hugging Face (no account required):
 
 Place it in:
 ```
-PMK/
+HostScheduler/
   llm_models/
     qwen2.5-0.5b-instruct-q4_k_m.gguf
 ```
@@ -224,7 +224,7 @@ The defaults work out of the box for ports. The values you are most likely to ch
 | Variable | Default | What it does |
 |---|---|---|
 | `MONITOR_PORT` | `8000` | Backend API port |
-| `KERNEL_PORT` | `8002` | Kernel process port |
+| `HOST_PORT` | `8002` | Host process port |
 | `PORT` | `3000` | Frontend port |
 | `API_URL` | `http://localhost:8000` | URL the frontend uses to reach the backend — change the host if the backend runs on another machine |
 | `LLAMA_SERVER_PATH` | `~/llama.cpp/build/bin/llama-server` | Path to the llama-server binary — override if yours is elsewhere |
@@ -307,7 +307,7 @@ LLAMA_SERVER_PATH=/your/path/to/llama-server
 3. Add this to your `docker-compose.override.yml` (create it in the repo root):
    ```yaml
    services:
-     pmk-backend:
+     hostscheduler-backend:
        deploy:
          resources:
            reservations:
@@ -364,7 +364,7 @@ The defaults work out of the box for ports. The values you are most likely to ch
 | Variable | Default | What it does |
 |---|---|---|
 | `MONITOR_PORT` | `8000` | Backend API port |
-| `KERNEL_PORT` | `8002` | Kernel process port |
+| `HOST_PORT` | `8002` | Host process port |
 | `PORT` | `3000` | Frontend port |
 | `API_URL` | `http://localhost:8000` | URL the frontend uses to reach the backend — change the host if the backend runs on another machine |
 | `LLAMA_SERVER_PATH` | `~/llama.cpp/build/bin/llama-server` | Path to the llama-server binary — override if yours is elsewhere |

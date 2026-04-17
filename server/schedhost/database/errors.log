@@ -1,0 +1,42 @@
+2026-04-17 10:27:39  WARNING   kernelroot.main.test_error
+  test exception at WARNING level
+  Traceback (most recent call last):
+    File "/home/roy/mcp-context/repos/llm-os/server/kernelroot/main.py", line 275, in test_error
+      raise RuntimeError(f"test exception at {name} level")
+  RuntimeError: test exception at WARNING level
+
+2026-04-17 10:27:39  ERROR     kernelroot.main.test_error
+  test exception at ERROR level
+  Traceback (most recent call last):
+    File "/home/roy/mcp-context/repos/llm-os/server/kernelroot/main.py", line 275, in test_error
+      raise RuntimeError(f"test exception at {name} level")
+  RuntimeError: test exception at ERROR level
+
+2026-04-17 10:27:39  CRITICAL  kernelroot.main.test_error
+  test exception at CRITICAL level
+  Traceback (most recent call last):
+    File "/home/roy/mcp-context/repos/llm-os/server/kernelroot/main.py", line 275, in test_error
+      raise RuntimeError(f"test exception at {name} level")
+  RuntimeError: test exception at CRITICAL level
+
+2026-04-17 10:31:38  WARNING   kernelroot.main.test_error (main.py:275)
+  test exception at WARNING level
+  Traceback (most recent call last):
+    File "/home/roy/mcp-context/repos/llm-os/server/kernelroot/main.py", line 275, in test_error
+      raise RuntimeError(f"test exception at {name} level")
+  RuntimeError: test exception at WARNING level
+
+2026-04-17 10:31:38  ERROR     kernelroot.main.test_error (main.py:275)
+  test exception at ERROR level
+  Traceback (most recent call last):
+    File "/home/roy/mcp-context/repos/llm-os/server/kernelroot/main.py", line 275, in test_error
+      raise RuntimeError(f"test exception at {name} level")
+  RuntimeError: test exception at ERROR level
+
+2026-04-17 10:31:38  CRITICAL  kernelroot.main.test_error (main.py:275)
+  test exception at CRITICAL level
+  Traceback (most recent call last):
+    File "/home/roy/mcp-context/repos/llm-os/server/kernelroot/main.py", line 275, in test_error
+      raise RuntimeError(f"test exception at {name} level")
+  RuntimeError: test exception at CRITICAL level
+

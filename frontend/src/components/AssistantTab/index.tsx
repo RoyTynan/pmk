@@ -5,7 +5,7 @@ import styles from './AssistantTab.module.css'
 
 function makePrompts(name: string, folder: string) {
   const base = `server/schedulers/${folder}`
-  const rule  = `\n\n⚠ Work only inside \`${base}/\`. Do NOT open, read, or modify anything in \`server/kernelroot/\` — that directory is off-limits.`
+  const rule  = `\n\n⚠ Work only inside \`${base}/\`. Do NOT open, read, or modify anything in \`server/schedhost/\` — that directory is off-limits.`
   return [
     {
       label: 'Add a handler',
@@ -76,8 +76,8 @@ export default function AssistantTab({ onCreated, schedulers }: { onCreated: () 
   }
 
   async function stopAndRegister() {
-    await api.kernelStop()
-    setTimeout(() => api.kernelStart(), 800)
+    await api.hostStop()
+    setTimeout(() => api.hostStart(), 800)
   }
 
   function clearDelResults() { setUnregResult(null); setRegResult(null); setDelResult(null); setDeleteStep(0) }
@@ -142,13 +142,13 @@ export default function AssistantTab({ onCreated, schedulers }: { onCreated: () 
           <ul className={styles.fileList} style={{ marginBottom: '0.8rem' }}>
             {report.created?.map(f => <li key={f}><code>{f}</code></li>)}
           </ul>
-          <button className="btn amber" onClick={stopAndRegister}>stop kernel &amp; register</button>
+          <button className="btn amber" onClick={stopAndRegister}>stop host &amp; register</button>
         </div>
       )}
 
-      <div className={styles.kernelRuleNotice}>
+      <div className={styles.hostRuleNotice}>
         It is so important that you include in your rules or prompts:<br />
-        <code>Work only inside <strong>server/schedulers/{targetFolder}/</strong>. Do NOT open, read, or modify anything in <strong>server/kernelroot/</strong> — that directory is off-limits.</code>
+        <code>Work only inside <strong>server/schedulers/{targetFolder}/</strong>. Do NOT open, read, or modify anything in <strong>server/schedhost/</strong> — that directory is off-limits.</code>
       </div>
 
       <p className={styles.hint}>
@@ -273,7 +273,7 @@ export default function AssistantTab({ onCreated, schedulers }: { onCreated: () 
           <span className={styles.hint}>
             {unregResult.scheduler_stopped
               ? ' — scheduler stopped'
-              : ' — restart kernel to fully unload'}
+              : ' — restart host to fully unload'}
           </span>
         </div>
       )}
@@ -286,7 +286,7 @@ export default function AssistantTab({ onCreated, schedulers }: { onCreated: () 
           <span className={styles.badge}>re-registered</span>
           <code>{regResult.registered}</code>
           <span className={styles.hint}>
-            {regResult.scheduler_started ? ' — scheduler running' : ' — restart kernel to activate'}
+            {regResult.scheduler_started ? ' — scheduler running' : ' — restart host to activate'}
           </span>
         </div>
       )}

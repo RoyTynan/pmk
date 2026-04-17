@@ -8,7 +8,7 @@ Usage:
     python cli.py result <task_id_or_prefix>
 """
 import sys
-from kernelroot.core import task_queue
+from schedhost.core import task_queue
 
 
 def cmd_submit(args: list[str]):

@@ -20,8 +20,8 @@ ENV HOME=/root
 
 # llama-server is bind-mounted from the host at runtime
 # Expected at: /root/llama.cpp/build/bin/llama-server
-# (matches the path in kernelroot/core/config.py)
+# (matches the path in schedhost/core/config.py)
 
 EXPOSE 8000 8002
 
-CMD ["python", "-m", "uvicorn", "kernelroot.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["python", "-m", "uvicorn", "schedhost.main:app", "--host", "0.0.0.0", "--port", "8000"]

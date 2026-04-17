@@ -13,7 +13,7 @@ import sqlite3
 import time
 import uuid
 
-from kernelroot.core.config import TASKS_DB_PATH
+from schedhost.core.config import TASKS_DB_PATH
 
 
 def _conn() -> sqlite3.Connection:

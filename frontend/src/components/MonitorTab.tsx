@@ -30,7 +30,7 @@ function fmt(ts: number | null) {
 }
 
 export default function MonitorTab() {
-  const { tasks, llms, kernel } = useAppState()
+  const { tasks, llms, host } = useAppState()
   const [agents, setAgents]       = useState<Agent[]>([])
   const [page, setPage]           = useState(0)
   const [expanded, setExpanded]   = useState<Set<string>>(new Set())
@@ -52,7 +52,7 @@ export default function MonitorTab() {
 
   async function submitTask() {
     if (!prompt.trim()) return
-    if (!kernel.running) { setSubmitMsg('⚠ kernel is not running — start it first'); return }
+    if (!host.running) { setSubmitMsg('⚠ host is not running — start it first'); return }
     const selectedLlm = llms.find(l => l.name === llm)
     if (selectedLlm?.type === 'local' && !selectedLlm.running) { setSubmitMsg(`⚠ "${llm}" is not running — start it in the LLMs tab first`); return }
     const isPlanner = agent === 'planner'
@@ -83,9 +83,9 @@ export default function MonitorTab() {
 
   return (
     <div>
-      {!kernel.running && (
+      {!host.running && (
         <div style={{ background: '#2a1a00', border: '1px solid #fa0', borderRadius: 4, padding: '0.4rem 0.8rem', marginBottom: '0.8rem', fontSize: '0.9rem', color: '#fa0' }}>
-          ⚠ kernel is stopped — click <strong>kernel ○ stopped</strong> in the top bar to start it before submitting tasks
+          ⚠ host is stopped — click <strong>host ○ stopped</strong> in the top bar to start it before submitting tasks
         </div>
       )}
 

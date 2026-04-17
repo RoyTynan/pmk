@@ -6,7 +6,7 @@ import json
 import sqlite3
 import uuid
 from datetime import datetime
-from kernelroot.core.config import TASKS_DB_PATH
+from schedhost.core.config import TASKS_DB_PATH
 
 
 def _conn():

@@ -1,6 +1,6 @@
 # Building a Scheduler
 
-A scheduler is a pluggable module that pulls tasks of a specific type from the shared queue and dispatches them to handlers. The kernel loads schedulers at startup and runs each in its own thread. The kernel itself never needs to be modified — adding a new scheduler is entirely self-contained.
+A scheduler is a pluggable module that pulls tasks of a specific type from the shared queue and dispatches them to handlers. The host loads schedulers at startup and runs each in its own thread. The host itself never needs to be modified — adding a new scheduler is entirely self-contained.
 
 The quickest way to get started is the **assistant tab**, which generates a complete scaffold in one click. You can also use any external AI coding assistant, or build one manually.
 
@@ -26,7 +26,7 @@ Open the **assistant** top-level tab. Enter a name for your scheduler (e.g. `ima
     └── {name}.log         ← rotating exception log (5 MB × 3 files)
 ```
 
-The scaffold is immediately registered in both `scheduler_registry.py` and `router_registry.py` — no manual edits required. Click **stop kernel & register** in the assistant tab to restart the kernel and activate the new scheduler.
+The scaffold is immediately registered in both `scheduler_registry.py` and `router_registry.py` — no manual edits required. Click **stop host & register** in the assistant tab to restart the host and activate the new scheduler.
 
 The example handlers (`RemoveAlternateWordsHandler`, `AddWordHandler`, `DeleteWordHandler`) are working boilerplate that prove the scaffold is wired correctly. Replace them with your own handler logic.
 
@@ -34,7 +34,7 @@ The example handlers (`RemoveAlternateWordsHandler`, `AddWordHandler`, `DeleteWo
 
 ## Exception handling and logging
 
-Each generated scheduler is responsible for its own exception handling. The kernel does **not** catch scheduler exceptions — any unhandled exception will mark a task as failed and be recorded in the scheduler's log file only, not the kernel exception log.
+Each generated scheduler is responsible for its own exception handling. The host does **not** catch scheduler exceptions — any unhandled exception will mark a task as failed and be recorded in the scheduler's log file only, not the host exception log.
 
 ### The log file
 
@@ -111,13 +111,13 @@ def _handle(self, input: str, options: dict) -> str:
 
 The built-in assistant is not required. You can generate an identical scaffold using any AI coding assistant — Claude Code, GitHub Copilot, Cursor, or anything else — by giving it the scaffolding code as context.
 
-The source of truth for the scaffold is `server/kernelroot/scaffolding/scaffolding.py`. Point your AI assistant at that file and ask it to generate a new scheduler for a given name. The scaffolding code contains the complete template for every file in the scheduler folder, so any capable coding assistant can produce a correctly wired result.
+The source of truth for the scaffold is `server/schedhost/scaffolding/scaffolding.py`. Point your AI assistant at that file and ask it to generate a new scheduler for a given name. The scaffolding code contains the complete template for every file in the scheduler folder, so any capable coding assistant can produce a correctly wired result.
 
 A minimal prompt:
 
-> Read `server/kernelroot/scaffolding/scaffolding.py` to understand the scaffold template, then generate a new scheduler named `{name}` following that exact structure. Create all files under `server/schedulers/{name}_scheduler/`. Do not modify anything in `server/kernelroot/`.
+> Read `server/schedhost/scaffolding/scaffolding.py` to understand the scaffold template, then generate a new scheduler named `{name}` following that exact structure. Create all files under `server/schedulers/{name}_scheduler/`. Do not modify anything in `server/schedhost/`.
 
-After the files are generated, register the scheduler manually in `server/kernelroot/scheduler_registry.py` and `server/kernelroot/router_registry.py` (the assistant tab does this automatically; with an external AI you do it yourself), then restart the kernel.
+After the files are generated, register the scheduler manually in `server/schedhost/scheduler_registry.py` and `server/schedhost/router_registry.py` (the assistant tab does this automatically; with an external AI you do it yourself), then restart the host.
 
 ---
 
@@ -134,9 +134,9 @@ Once a scheduler is created, the assistant tab shows a panel of ready-made promp
 
 Paste the prompt into Claude Code (or any AI coding assistant). Each prompt enforces a strict boundary:
 
-> Work only inside `server/schedulers/{name}_scheduler/`. Do NOT open, read, or modify anything in `server/kernelroot/` — that directory is off-limits.
+> Work only inside `server/schedulers/{name}_scheduler/`. Do NOT open, read, or modify anything in `server/schedhost/` — that directory is off-limits.
 
-This keeps the kernel untouched regardless of what the AI does.
+This keeps the host untouched regardless of what the AI does.
 
 ---
 
@@ -144,9 +144,9 @@ This keeps the kernel untouched regardless of what the AI does.
 
 The **manage schedulers** section in the assistant tab lets you:
 
-- **unregister** — removes the scheduler from the registry so the kernel no longer loads it. Code files are left on disk. Takes effect after a kernel restart.
+- **unregister** — removes the scheduler from the registry so the host no longer loads it. Code files are left on disk. Takes effect after a host restart.
 - **re-register** — re-activates a previously unregistered scheduler.
-- **delete all** — permanently deletes the scheduler's entire folder from disk (user-created schedulers only, three-click confirmation). Takes effect after a kernel restart.
+- **delete all** — permanently deletes the scheduler's entire folder from disk (user-created schedulers only, three-click confirmation). Takes effect after a host restart.
 
 Built-in schedulers (`llm`, `jsonparser`) can be unregistered but not deleted from the assistant tab.
 
@@ -155,14 +155,14 @@ Built-in schedulers (`llm`, `jsonparser`) can be unregistered but not deleted fr
 If you are not using the built-in assistant, deleting a scheduler is three steps:
 
 1. **Remove the folder** — delete `server/schedulers/{name}_scheduler/` entirely.
-2. **Remove from the scheduler registry** — open `server/kernelroot/scheduler_registry.py` and delete the line for `{name}`.
-3. **Remove from the router registry** — open `server/kernelroot/router_registry.py` and delete the corresponding entry.
+2. **Remove from the scheduler registry** — open `server/schedhost/scheduler_registry.py` and delete the line for `{name}`.
+3. **Remove from the router registry** — open `server/schedhost/router_registry.py` and delete the corresponding entry.
 
-Then restart the kernel.
+Then restart the host.
 
 A prompt for your AI assistant:
 
-> Delete the scheduler named `{name}` from this project. Remove the folder `server/schedulers/{name}_scheduler/`, then remove its entry from `server/kernelroot/scheduler_registry.py` and `server/kernelroot/router_registry.py`. Do not touch any other files.
+> Delete the scheduler named `{name}` from this project. Remove the folder `server/schedulers/{name}_scheduler/`, then remove its entry from `server/schedhost/scheduler_registry.py` and `server/schedhost/router_registry.py`. Do not touch any other files.
 
 ---
 
@@ -237,9 +237,9 @@ Subclass `SchedulerBase`, declare `NAME` and `HANDLER_REGISTRY`, and implement `
 # server/schedulers/{name}_scheduler/scheduler.py
 import threading
 import time
-from kernelroot.core import task_queue
-from kernelroot.core.scheduler_base import SchedulerBase
-from kernelroot.core.config import POLL_INTERVAL_SECONDS
+from schedhost.core import task_queue
+from schedhost.core.scheduler_base import SchedulerBase
+from schedhost.core.config import POLL_INTERVAL_SECONDS
 from schedulers.{name}_scheduler.handlers.my_handler import MyHandler
 from schedulers.{name}_scheduler.logger import logger
 
@@ -311,7 +311,7 @@ class MyScheduler(SchedulerBase):
 
 ### 5. Write a router (optional)
 
-If your scheduler needs its own HTTP endpoints beyond what the kernel API auto-generates (e.g. for querying your scheduler's database), add a `router.py`:
+If your scheduler needs its own HTTP endpoints beyond what the host API auto-generates (e.g. for querying your scheduler's database), add a `router.py`:
 
 ```python
 # server/schedulers/{name}_scheduler/router.py
@@ -327,7 +327,7 @@ def list_results():
 
 ### 6. Register it
 
-Add the scheduler to `server/kernelroot/scheduler_registry.py`:
+Add the scheduler to `server/schedhost/scheduler_registry.py`:
 
 ```python
 SCHEDULER_MAP: dict[str, str] = {
@@ -338,7 +338,7 @@ SCHEDULER_MAP: dict[str, str] = {
 }
 ```
 
-If you added a router, add it to `server/kernelroot/router_registry.py`:
+If you added a router, add it to `server/schedhost/router_registry.py`:
 
 ```python
 ROUTERS: list[tuple[str, str]] = [
@@ -351,16 +351,16 @@ Restart the backend to load the new scheduler.
 
 ---
 
-## How the kernel picks up your scheduler
+## How the host picks up your scheduler
 
-At startup, the control plane (`main.py`) reads `scheduler_registry.py` and passes all keys as `KERNEL_SCHEDULERS` to the kernel process. The kernel:
+At startup, the control plane (`main.py`) reads `scheduler_registry.py` and passes all keys as `HOST_SCHEDULERS` to the host process. The host:
 
 1. Imports the class from the dotted path
 2. Instantiates it
 3. Runs it in a daemon thread
-4. Auto-generates one `POST /kernel/{name}/{operation}` endpoint per entry in `HANDLER_REGISTRY`
+4. Auto-generates one `POST /host/{name}/{operation}` endpoint per entry in `HANDLER_REGISTRY`
 
-The auto-generated kernel API (port 8002) is separate from the router endpoints (port 8000). The kernel API is synchronous and direct — it bypasses the task queue entirely and calls the handler immediately.
+The auto-generated host API (port 8002) is separate from the router endpoints (port 8000). The host API is synchronous and direct — it bypasses the task queue entirely and calls the handler immediately.
 
 ---
 
@@ -384,7 +384,7 @@ curl -X POST http://localhost:8000/submit \
 
 Poll `GET /tasks/{task_id}` until `status` is `done` or `failed`.
 
-The scheduler tab in the frontend submits tasks this way automatically — results appear in the task queue and the kernel activity log.
+The scheduler tab in the frontend submits tasks this way automatically — results appear in the task queue and the host activity log.
 
 ---
 
@@ -397,4 +397,4 @@ The scheduler tab in the frontend submits tasks this way automatically — resul
 | Scheduler | Edit `scheduler.py` | Write `SchedulerBase` subclass with `HANDLER_REGISTRY` |
 | Router | Edit `router.py` | Write FastAPI `APIRouter`, add to `router_registry.py` |
 | Registration | Done automatically | Add to `scheduler_registry.py` (and `router_registry.py`) |
-| Activation | Click **stop kernel & register** | Restart the backend |
+| Activation | Click **stop host & register** | Restart the backend |

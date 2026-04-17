@@ -6,7 +6,7 @@ export interface AppState {
   tasks:     Task[]
   activity:  ActivityEntry[]
   llms:      LLM[]
-  kernel:    { running: boolean }
+  host:    { running: boolean }
   multi:     { enabled: boolean }
   connected: boolean
 }
@@ -15,7 +15,7 @@ const defaultState: AppState = {
   tasks:     [],
   activity:  [],
   llms:      [],
-  kernel:    { running: false },
+  host:    { running: false },
   multi:     { enabled: false },
   connected: false,
 }
@@ -49,7 +49,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
         tasks:    d.tasks    ?? s.tasks,
         activity: d.activity ?? s.activity,
         llms:     d.llms     ?? s.llms,
-        kernel:   d.kernel   ?? s.kernel,
+        host:   d.host   ?? s.host,
         multi:    d.multi    ?? s.multi,
       }))
     }
