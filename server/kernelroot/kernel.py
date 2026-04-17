@@ -20,6 +20,7 @@ Custom schedulers can be loaded by dotted class path:
     KERNEL_SCHEDULERS=mypackage.mymodule.MyScheduler
 """
 import importlib
+import logging
 import os
 import threading
 import uuid
@@ -28,7 +29,7 @@ import uvicorn
 from fastapi import FastAPI
 from pydantic import BaseModel
 
-from kernelroot.core import task_queue
+from kernelroot.core import task_queue, error_log
 from kernelroot.core.config import TASKS_DB_PATH
 from kernelroot.scheduler_registry import SCHEDULER_MAP
 
@@ -112,6 +113,7 @@ def _build_kernel_api(loaded: dict, instances: dict) -> FastAPI:
             t.start()
             return {"ok": True, "started": name}
         except Exception as e:
+            error_log.capture(e, logging.ERROR, f"kernelroot.kernel [{name}]")
             return {"ok": False, "error": str(e)}
 
     # one POST route per operation per scheduler
@@ -123,6 +125,7 @@ def _build_kernel_api(loaded: dict, instances: dict) -> FastAPI:
                 return {"ok": True, "result": result,
                         "scheduler": sched_name, "operation": op_name}
             except Exception as e:
+                error_log.capture(e, logging.ERROR, f"kernelroot.kernel [{sched_name}.{op_name}]")
                 return {"ok": False, "error": str(e),
                         "scheduler": sched_name, "operation": op_name}
         route.__name__ = f"{sched_name}_{op_name}"

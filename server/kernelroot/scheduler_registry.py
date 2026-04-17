@@ -6,5 +6,6 @@
 SCHEDULER_MAP: dict[str, str] = {
     "llm":        "schedulers.llm_scheduler.scheduler.LLMScheduler",
     "jsonparser": "schedulers.jsonparser_scheduler.scheduler.JsonParserScheduler",
+    "test":  "schedulers.test_scheduler.scheduler.TestScheduler",
     # [ASSISTANT_SCHEDULERS]
 }

@@ -32,6 +32,18 @@ export interface ActivityEntry {
   error:       string | null
 }
 
+export interface ErrorEntry {
+  id:         string
+  ts:         number
+  ts_human:   string
+  level:      number
+  level_name: string
+  source:     string
+  location:   string | null
+  message:    string
+  traceback:  string | null
+}
+
 export { LLMType } from './enums'
 import type { LLMType } from './enums'
 
@@ -79,6 +91,9 @@ export const api = {
   taskDelete:         (id: string)             => fetch(`${BASE}/tasks/${id}`,                    { method: 'DELETE' }).then(j),
   taskRequeue:        (id: string)             => fetch(`${BASE}/tasks/${id}/requeue`,            { method: 'POST' }).then(j),
   activityClear:      ()                       => fetch(`${BASE}/activity/clear`,                 { method: 'POST' }).then(j),
+  errorsList:         (limit = 200)            => fetch(`${BASE}/errors?limit=${limit}`).then(j) as Promise<ErrorEntry[]>,
+  errorsClear:        ()                       => fetch(`${BASE}/errors/clear`,                   { method: 'POST' }).then(j),
+  errorsTest:         ()                       => fetch(`${BASE}/errors/test`,                    { method: 'POST' }).then(j),
   submit:        (body: {
     prompt: string; target_llm: string; agent_type: string
     child_routing: string; aggregate: boolean

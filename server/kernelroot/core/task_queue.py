@@ -3,12 +3,15 @@ SQLite-backed task queue — path-agnostic.
 Callers must call task_queue.init(db_path) before using any other function.
 Each scheduler provides its own db_path so they each own their own tasks.db.
 """
+import logging
 import os
 import uuid
 import json
 import sqlite3
 import time
 import socket as _socket
+
+from kernelroot.core import error_log
 
 
 _DB_PATH: str | None = None
@@ -83,8 +86,8 @@ def _notify():
         s.connect((IPC_HOST, IPC_PORT))
         s.sendall(b"change\n")
         s.close()
-    except Exception:
-        pass  # monitor may not be running — silent fail
+    except Exception as e:
+        error_log.capture(e, logging.WARNING, "kernelroot.core.task_queue._notify")
 
 
 def _parse_task(row) -> dict:
@@ -93,7 +96,8 @@ def _parse_task(row) -> dict:
     if t.get("options"):
         try:
             t["options"] = json.loads(t["options"])
-        except Exception:
+        except Exception as e:
+            error_log.capture(e, logging.ERROR, "kernelroot.core.task_queue._parse_task")
             t["options"] = {}
     return t
 

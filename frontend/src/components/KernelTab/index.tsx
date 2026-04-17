@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
-import { api } from '@/lib/api'
+import { api, type ErrorEntry } from '@/lib/api'
 import { useAppState } from '@/contexts/AppState'
 import styles from './KernelTab.module.css'
 
@@ -63,6 +63,23 @@ export default function KernelTab() {
   const [mounted,     setMounted]     = useState(false)
   useEffect(() => { setMounted(true) }, [])
 
+  const [showErrors,    setShowErrors]    = useState(false)
+  const [errors,        setErrors]        = useState<ErrorEntry[]>([])
+  const [errPage,       setErrPage]       = useState(0)
+  const [errLoading,    setErrLoading]    = useState(false)
+  const [errClearing,   setErrClearing]   = useState(false)
+  const [errClearWarn,  setErrClearWarn]  = useState(false)
+  const [expandedErr,   setExpandedErr]   = useState<string | null>(null)
+  const [errTesting,    setErrTesting]    = useState(false)
+
+  const loadErrors = useCallback(async () => {
+    setErrLoading(true)
+    try { setErrors(await api.errorsList()) }
+    finally { setErrLoading(false) }
+  }, [])
+
+  useEffect(() => { if (showErrors) loadErrors() }, [showErrors, loadErrors])
+
   const PAGE_SIZE = 10
 
   const counts = tasks.reduce<Record<string, number>>((acc, t) => {
@@ -121,6 +138,12 @@ export default function KernelTab() {
             disabled={acting || !kernelUp}
           >
             {acting && kernelUp ? 'Stopping…' : 'Stop'}
+          </button>
+          <button
+            className={`${styles.btnExceptions} ${showErrors ? styles.btnExceptionsActive : ''}`}
+            onClick={() => setShowErrors(v => !v)}
+          >
+            exceptions {errors.length > 0 && <span className={styles.errBadge}>{errors.length}</span>}
           </button>
         </div>
       </section>
@@ -315,6 +338,104 @@ export default function KernelTab() {
                     <button className={styles.pageBtn} onClick={() => setActPage(p => p - 1)} disabled={safeActPage === 0}>‹</button>
                     <span className={styles.pageInfo}>page {safeActPage + 1} / {actTotalPages}</span>
                     <button className={styles.pageBtn} onClick={() => setActPage(p => p + 1)} disabled={safeActPage >= actTotalPages - 1}>›</button>
+                  </div>
+                )}
+              </>
+            )}
+          </section>
+        )
+      })()}
+
+      {/* ── Exceptions ─────────────────────────────────────────── */}
+      {showErrors && (() => {
+        const errTotalPages = Math.ceil(errors.length / PAGE_SIZE)
+        const safeErrPage   = Math.min(errPage, Math.max(0, errTotalPages - 1))
+        const pagedErrors   = errors.slice(safeErrPage * PAGE_SIZE, (safeErrPage + 1) * PAGE_SIZE)
+        return (
+          <section className={`${styles.card} ${styles.wide}`}>
+            <div className={styles.cardHead}>
+              <span className={styles.cardTitle}>Exceptions</span>
+              <span className={styles.taskCount}>{errors.length}</span>
+              <button className={styles.btnRefresh} onClick={loadErrors} disabled={errLoading}>
+                {errLoading ? '…' : '↺'}
+              </button>
+              <button
+                className={styles.btnTest}
+                disabled={errTesting}
+                onClick={async () => {
+                  setErrTesting(true)
+                  await api.errorsTest()
+                  await loadErrors()
+                  setErrTesting(false)
+                }}
+              >
+                {errTesting ? '…' : 'fire test'}
+              </button>
+              <button
+                className={`${styles.btnClear} ${errClearWarn ? styles.btnClearWarn : ''}`}
+                disabled={!mounted || errClearing || errors.length === 0}
+                onClick={async () => {
+                  if (!errClearWarn) { setErrClearWarn(true); return }
+                  setErrClearWarn(false)
+                  setErrClearing(true)
+                  await api.errorsClear()
+                  setErrors([])
+                  setErrPage(0)
+                  setErrClearing(false)
+                }}
+                onBlur={() => setErrClearWarn(false)}
+              >
+                {errClearing ? '…' : errClearWarn ? 'confirm clear?' : 'clear'}
+              </button>
+            </div>
+            {errors.length === 0 ? (
+              <div className={styles.taskEmpty}>no exceptions recorded</div>
+            ) : (
+              <>
+                <table className={styles.errTable}>
+                  <thead>
+                    <tr>
+                      <th>time</th>
+                      <th>level</th>
+                      <th>location</th>
+                      <th>source</th>
+                      <th>message</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pagedErrors.map(e => {
+                      const expanded = expandedErr === e.id
+                      return (
+                        <>
+                          <tr
+                            key={e.id}
+                            className={styles.errRow}
+                            onClick={() => setExpandedErr(expanded ? null : e.id)}
+                            title={e.traceback ? 'click to toggle traceback' : undefined}
+                          >
+                            <td className={styles.errTime}>{e.ts_human}</td>
+                            <td className={styles[`errLevel${e.level_name}`] ?? styles.errLevelERROR}>{e.level_name}</td>
+                            <td className={styles.errLocation}>{e.location ?? '—'}</td>
+                            <td className={styles.errSource}>{e.source}</td>
+                            <td className={styles.errMessage}>{e.message}</td>
+                          </tr>
+                          {expanded && e.traceback && (
+                            <tr key={`${e.id}-tb`} className={styles.errExpandRow}>
+                              <td colSpan={4}>
+                                <pre className={styles.errTraceback}>{e.traceback.trim()}</pre>
+                              </td>
+                            </tr>
+                          )}
+                        </>
+                      )
+                    })}
+                  </tbody>
+                </table>
+                {errTotalPages > 1 && (
+                  <div className={styles.pagination}>
+                    <button className={styles.pageBtn} onClick={() => setErrPage(p => p - 1)} disabled={safeErrPage === 0}>‹</button>
+                    <span className={styles.pageInfo}>page {safeErrPage + 1} / {errTotalPages}</span>
+                    <button className={styles.pageBtn} onClick={() => setErrPage(p => p + 1)} disabled={safeErrPage >= errTotalPages - 1}>›</button>
                   </div>
                 )}
               </>

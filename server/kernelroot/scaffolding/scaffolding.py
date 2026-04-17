@@ -129,6 +129,41 @@ def generate_scheduler(name: str, scheduler_map: dict) -> dict:
     scaffold_write(os.path.join(sched_dir, "__init__.py"), "", created)
     scaffold_write(os.path.join(sched_dir, "handlers", "__init__.py"), "", created)
 
+    # ── logger.py ───────────────────────────────────────────────────────────
+    scaffold_write(os.path.join(sched_dir, "logger.py"), f"""\
+\"\"\"
+Scheduler-level file logger — writes to logs/{name}.log.
+Import 'logger' in any scheduler module that needs exception logging.
+\"\"\"
+import logging
+import logging.handlers
+import os
+
+from schedulers.{folder}.paths import LOGS_DIR
+
+
+def _build():
+    os.makedirs(LOGS_DIR, exist_ok=True)
+    log = logging.getLogger("schedulers.{folder}")
+    log.propagate = False
+    log.setLevel(logging.DEBUG)
+    if not log.handlers:
+        h = logging.handlers.RotatingFileHandler(
+            os.path.join(LOGS_DIR, "{name}.log"),
+            maxBytes=5 * 1024 * 1024,
+            backupCount=3,
+        )
+        h.setFormatter(logging.Formatter(
+            "%(asctime)s  %(levelname)-8s  %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+        ))
+        log.addHandler(h)
+    return log
+
+
+logger = _build()
+""", created)
+
     # ── paths.py ────────────────────────────────────────────────────────────
     scaffold_write(os.path.join(sched_dir, "paths.py"), f"""\
 import os
@@ -202,13 +237,28 @@ _init()
     scaffold_write(os.path.join(sched_dir, "handlers", "base.py"), f"""\
 \"\"\"
 Base class for all {name} scheduler handlers.
-Extend this for your own handlers.
+
+Subclasses implement _handle(input, options) — the base class wraps every
+call in try/except and logs failures to the scheduler log file.
 \"\"\"
 from kernelroot.core.handler_base import HandlerBase
+from schedulers.{folder}.logger import logger
 
 
 class {Name}HandlerBase(HandlerBase):
-    pass
+
+    def handle(self, input: str, options: dict | None = None) -> str:
+        try:
+            return self._handle(input, options or {{}})
+        except Exception as e:
+            logger.exception(
+                f"{{self.__class__.__name__}}.handle failed — "
+                f"input: {{input[:120]!r}}"
+            )
+            raise
+
+    def _handle(self, input: str, options: dict) -> str:
+        raise NotImplementedError
 """, created)
 
     # ── handlers/string_handlers.py ─────────────────────────────────────────
@@ -227,7 +277,7 @@ from schedulers.{folder}.handlers.base import {Name}HandlerBase
 class RemoveAlternateWordsHandler({Name}HandlerBase):
     \"\"\"Removes every other word from the input string.\"\"\"
 
-    def handle(self, input: str, options: dict | None = None) -> str:
+    def _handle(self, input: str, options: dict) -> str:
         words  = input.split()
         result = " ".join(words[i] for i in range(0, len(words), 2))
         return json.dumps({{"input": input, "output": result}})
@@ -238,8 +288,8 @@ class AddWordHandler({Name}HandlerBase):
     Options: word (str) — word to append (default: 'hello')
     \"\"\"
 
-    def handle(self, input: str, options: dict | None = None) -> str:
-        word   = (options or {{}}).get("word", "hello")
+    def _handle(self, input: str, options: dict) -> str:
+        word   = options.get("word", "hello")
         result = f"{{input}} {{word}}"
         return json.dumps({{"input": input, "output": result}})
 
@@ -249,8 +299,8 @@ class DeleteWordHandler({Name}HandlerBase):
     Options: word (str) — word to remove
     \"\"\"
 
-    def handle(self, input: str, options: dict | None = None) -> str:
-        word = (options or {{}}).get("word", "")
+    def _handle(self, input: str, options: dict) -> str:
+        word = options.get("word", "")
         if not word:
             return json.dumps({{"input": input, "output": input, "warning": "no word specified"}})
         result = " ".join(w for w in input.split() if w != word)
@@ -281,6 +331,7 @@ from schedulers.{folder}.handlers.string_handlers import (
     DeleteWordHandler,
 )
 from schedulers.{folder} import db as scheduler_db
+from schedulers.{folder}.logger import logger
 
 MAX_CONCURRENT = 4
 
@@ -360,6 +411,9 @@ class {Name}Scheduler(SchedulerBase):
         except Exception as e:
             ok = False
             err = str(e)
+            logger.exception(
+                f"task {{short_id}} ({{task['agent_type']}}) failed: {{e}}"
+            )
         finally:
             # log before mark_done/failed so activity is written before the IPC notify fires
             self.log_activity(
@@ -395,6 +449,7 @@ from schedulers.{folder}.handlers.string_handlers import (
     AddWordHandler,
     DeleteWordHandler,
 )
+from schedulers.{folder}.logger import logger
 
 router = APIRouter(prefix="/{name}", tags=["{name}"])
 
@@ -413,22 +468,34 @@ class ProcessRequest(BaseModel):
 
 @router.get("/results", summary="List all results")
 def list_results():
-    return scheduler_db.list_results()
+    try:
+        return scheduler_db.list_results()
+    except Exception as e:
+        logger.exception("GET /{name}/results failed")
+        return {{"ok": False, "error": str(e)}}
 
 
 @router.post("/process", summary="Process a string")
 def process(req: ProcessRequest):
     if req.operation not in _HANDLERS:
         return {{"ok": False, "error": f"Unknown operation '{{req.operation}}'. Valid: {{list(_HANDLERS)}}"}}
-    result = _HANDLERS[req.operation]().handle(req.input, req.options)
-    row_id = scheduler_db.save_result(req.operation, req.input, result)
-    return {{"ok": True, "id": row_id, "result": result}}
+    try:
+        result = _HANDLERS[req.operation]().handle(req.input, req.options)
+        row_id = scheduler_db.save_result(req.operation, req.input, result)
+        return {{"ok": True, "id": row_id, "result": result}}
+    except Exception as e:
+        logger.exception(f"POST /{name}/process failed — operation={{req.operation!r}}")
+        return {{"ok": False, "error": str(e)}}
 
 
 @router.delete("/results/{{id}}", summary="Delete a result")
 def delete_result(id: str):
-    scheduler_db.delete_result(id)
-    return {{"ok": True}}
+    try:
+        scheduler_db.delete_result(id)
+        return {{"ok": True}}
+    except Exception as e:
+        logger.exception(f"DELETE /{name}/results/{{{{id}}}} failed — id={{id!r}}")
+        return {{"ok": False, "error": str(e)}}
 """, created)
 
     # ── README.md ───────────────────────────────────────────────────────────
@@ -443,14 +510,16 @@ Generated by the PMK scheduler assistant.
 {folder}/
 ├── scheduler.py           ← SchedulerBase subclass — start here
 ├── paths.py               ← filesystem paths (database/, logs/)
+├── logger.py              ← rotating file logger → logs/{name}.log
 ├── db.py                  ← SQLite schema and helpers for {name}.db
 ├── router.py              ← FastAPI GET / POST / DELETE routes
 ├── handlers/
-│   ├── base.py            ← base class for all handlers
+│   ├── base.py            ← base class; owns try/except + logging via _handle()
 │   └── string_handlers.py ← boilerplate handlers (replace with your own)
 ├── database/
 │   └── {name}.db          ← scheduler's own SQLite database
-└── logs/                  ← log files (gitignored)
+└── logs/
+    └── {name}.log         ← rotating exception log (5 MB × 3)
 ```
 
 ## Getting started

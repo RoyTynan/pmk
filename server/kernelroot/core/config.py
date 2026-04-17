@@ -18,6 +18,7 @@ BASE_DIR = SERVER_DIR
 # Kernel task queue DB — kernel infrastructure, not scheduler-specific
 TASKS_DB_DIR  = os.path.join(KERNELROOT_DIR, "database")
 TASKS_DB_PATH = os.path.join(TASKS_DB_DIR, "tasks.db")
+ERROR_LOG_PATH = os.path.join(TASKS_DB_DIR, "errors.log")
 
 # Scheduler polling — shared by all schedulers
 POLL_INTERVAL_SECONDS = 2

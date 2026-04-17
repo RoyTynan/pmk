@@ -7,6 +7,7 @@ main.py — web control panel for PMK.
 import asyncio
 import importlib
 import json
+import logging
 import os
 import re
 import signal
@@ -21,7 +22,7 @@ from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconn
 from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel
 
-from kernelroot.core import task_queue, activity_log
+from kernelroot.core import task_queue, activity_log, error_log
 from schedulers.llm_scheduler import registry as llm_registry
 from schedulers.llm_scheduler.client import acall_llm, ANTHROPIC_VERSION
 from schedulers.llm_scheduler.agentic.router import router as agentic_router
@@ -43,8 +44,8 @@ def _clean_exit(signum, frame):
     try:
         devnull = open(os.devnull, "w")
         os.dup2(devnull.fileno(), 2)
-    except Exception:
-        pass
+    except Exception as e:
+        error_log.capture(e, logging.WARNING, "kernelroot.main._clean_exit")
     os._exit(0)
 
 app = FastAPI()
@@ -59,6 +60,7 @@ for _mod_path, _attr in _SCHEDULER_ROUTERS:
         _mod = importlib.import_module(_mod_path)
         app.include_router(getattr(_mod, _attr))
     except Exception as _e:
+        error_log.capture(_e, logging.WARNING, f"kernelroot.main [router:{_mod_path}]")
         print(f"[main] warning: could not load router {_mod_path}: {_e}")
 
 init_traces_db()
@@ -90,7 +92,8 @@ class _WsManager:
         for client in self._clients:
             try:
                 await client.send_json(data)
-            except Exception:
+            except Exception as e:
+                error_log.capture(e, logging.WARNING, "kernelroot.main._WsManager.broadcast")
                 dead.append(client)
         for d in dead:
             self.disconnect(d)
@@ -146,8 +149,8 @@ async def _ipc_client(reader: asyncio.StreamReader, _writer: asyncio.StreamWrite
             if not line:
                 break
             await _push_queue.put("change")
-    except Exception:
-        pass
+    except Exception as e:
+        error_log.capture(e, logging.WARNING, "kernelroot.main._ipc_client")
 
 
 async def _push_worker():
@@ -190,8 +193,10 @@ async def ws_endpoint(ws: WebSocket):
         await ws.send_json(await asyncio.to_thread(_snapshot))   # initial state
         while True:
             await ws.receive_text()          # keep alive; ignore client messages
-    except (WebSocketDisconnect, Exception):
+    except WebSocketDisconnect:
         pass
+    except Exception as e:
+        error_log.capture(e, logging.WARNING, "kernelroot.main.ws_endpoint")
     finally:
         _ws_manager.disconnect(ws)
 
@@ -248,6 +253,30 @@ def clear_activity():
     cleared = activity_log.clear()
     _notify()
     return {"cleared": cleared}
+
+
+@app.get("/errors")
+def get_errors(limit: int = 200):
+    return error_log.list_recent(limit)
+
+
+@app.post("/errors/clear")
+def clear_errors():
+    cleared = error_log.clear()
+    return {"cleared": cleared}
+
+
+@app.post("/errors/test")
+def test_error():
+    """Raise a deliberate exception at each severity level to verify the handler and log."""
+    results = []
+    for level, name in ((logging.WARNING, "WARNING"), (logging.ERROR, "ERROR"), (logging.CRITICAL, "CRITICAL")):
+        try:
+            raise RuntimeError(f"test exception at {name} level")
+        except Exception as e:
+            error_log.capture(e, level, "kernelroot.main.test_error")
+            results.append(name)
+    return {"ok": True, "logged": results}
 
 
 @app.post("/tasks/clear")
@@ -444,7 +473,8 @@ def test_connection(req: RegisterRemoteRequest):
             r = httpx.get(f"{req.url.rstrip('/')}/models", timeout=5.0, headers=headers)
         try:
             body = r.json()
-        except Exception:
+        except Exception as e:
+            error_log.capture(e, logging.WARNING, "kernelroot.main.test_connection")
             body = r.text
         if r.status_code < 400:
             return {"ok": True, "data": body}
@@ -454,6 +484,7 @@ def test_connection(req: RegisterRemoteRequest):
             msg = body or f"HTTP {r.status_code}"
         return {"ok": False, "error": msg, "data": body}
     except Exception as e:
+        error_log.capture(e, logging.ERROR, "kernelroot.main.test_connection")
         return {"ok": False, "error": str(e)}
 
 
@@ -599,6 +630,7 @@ async def kernel_proxy(path: str, request: Request):
         )
         return Response(content=r.content, status_code=r.status_code, media_type="application/json")
     except Exception as e:
+        error_log.capture(e, logging.ERROR, "kernelroot.main.kernel_proxy")
         return Response(content=json.dumps({"error": str(e)}), status_code=502, media_type="application/json")
 
 
@@ -609,7 +641,8 @@ def kernel_routes():
     try:
         r = httpx.get(f"http://localhost:{kernel_port}/", timeout=2.0)
         return r.json()
-    except Exception:
+    except Exception as e:
+        error_log.capture(e, logging.WARNING, "kernelroot.main.kernel_routes")
         return {"schedulers": {}, "available": False}
 
 
@@ -665,7 +698,8 @@ def _scheduler_info(name: str, folder: str, builtin: bool) -> dict:
         mod = importlib.import_module(mod_path)
         cls = getattr(mod, cls_name)
         info = dict(getattr(cls, "SCHEDULER_INFO", {"name": name, "label": name.capitalize(), "api": []}))
-    except Exception:
+    except Exception as e:
+        error_log.capture(e, logging.WARNING, f"kernelroot.main._scheduler_info [{name}]")
         info = {"name": name, "label": name.capitalize(), "api": []}
     info["registered"] = registered
     info["builtin"]    = builtin
@@ -736,8 +770,8 @@ def unregister_scheduler(name: str):
     try:
         r = httpx.post(f"http://localhost:{kernel_port}/schedulers/{name}/stop", timeout=5.0)
         scheduler_stopped = r.json().get("ok", False)
-    except Exception:
-        pass  # kernel not running — nothing to stop
+    except Exception as e:
+        error_log.capture(e, logging.WARNING, "kernelroot.main.unregister_scheduler")
     return {"ok": True, "unregistered": f"schedulers/{folder}", "scheduler_stopped": scheduler_stopped}
 
 
@@ -771,6 +805,7 @@ def register_scheduler(name: str):
             router_mod = importlib.import_module(mod_path)
             app.include_router(getattr(router_mod, "router"))
         except Exception as e:
+            error_log.capture(e, logging.WARNING, "kernelroot.main.register_scheduler")
             print(f"[assistant] warning: could not hot-load router: {e}")
     else:
         # For built-ins, just restore the in-memory map
@@ -783,8 +818,8 @@ def register_scheduler(name: str):
         r = httpx.post(f"http://localhost:{kernel_port}/schedulers/{name}/start",
                        json={"dotted": dotted}, timeout=5.0)
         scheduler_started = r.json().get("ok", False)
-    except Exception:
-        pass  # kernel not running — will pick it up on next restart
+    except Exception as e:
+        error_log.capture(e, logging.WARNING, "kernelroot.main.register_scheduler")
 
     return {"ok": True, "registered": f"schedulers/{folder}", "scheduler_started": scheduler_started}
 
@@ -819,6 +854,7 @@ def create_scheduler(req: CreateSchedulerRequest):
         router_mod = importlib.import_module(mod_path)
         app.include_router(getattr(router_mod, "router"))
     except Exception as e:
+        error_log.capture(e, logging.WARNING, "kernelroot.main.create_scheduler")
         print(f"[assistant] warning: could not hot-load router: {e}")
 
     return result
@@ -858,6 +894,7 @@ async def _run_pipeline(steps: list[PipelineStep]):
             result = await acall_llm(url, model, history, api_key, provider)
             result = result.strip()
         except Exception as exc:
+            error_log.capture(exc, logging.ERROR, f"kernelroot.main._run_pipeline [{step.name}]")
             ok, err_str, result = False, str(exc), f"[error: {exc}]"
         finally:
             activity_log.log(

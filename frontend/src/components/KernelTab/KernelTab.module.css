@@ -241,6 +241,74 @@
 .actFail   { color: #ca5f5f; text-align: center; width: 30px; }
 .actErrTip { cursor: help; }
 
+/* ── exceptions button ────────────────────────────────────────── */
+.btnExceptions {
+  background: transparent;
+  border: 1px solid #2a2a2a;
+  color: #666;
+  border-radius: 4px;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.88rem;
+  font-family: monospace;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.btnExceptions:hover { border-color: #555; color: #ccc; }
+.btnExceptionsActive { border-color: #8a3a1a !important; color: #ca8f5f !important; background: #1a0a05 !important; }
+
+.btnTest {
+  background: transparent;
+  border: 1px solid #2a2a2a;
+  color: #555;
+  border-radius: 4px;
+  padding: 0.15rem 0.6rem;
+  font-size: 0.75rem;
+  font-family: monospace;
+  cursor: pointer;
+}
+.btnTest:hover:not(:disabled) { border-color: #555; color: #999; }
+.btnTest:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.errBadge {
+  background: #8a1a1a;
+  color: #f09090;
+  border-radius: 3px;
+  padding: 0 0.35rem;
+  font-size: 0.72rem;
+  font-family: monospace;
+}
+
+/* ── exceptions table ─────────────────────────────────────────── */
+.errTable { width: 100%; border-collapse: collapse; font-family: monospace; font-size: 0.8rem; }
+.errTable thead th { color: #444; font-weight: normal; text-align: left; padding: 0.2rem 0.5rem 0.5rem; border-bottom: 1px solid #1e1e1e; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.errTable tbody tr + tr td { border-top: 1px solid #141414; }
+.errTable tbody td { padding: 0.28rem 0.5rem; vertical-align: top; }
+
+.errRow { cursor: pointer; }
+.errRow:hover td { background: #111; }
+
+.errTime     { color: #555; white-space: nowrap; width: 140px; font-size: 0.78rem; }
+.errLocation { color: #7a9abb; white-space: nowrap; width: 140px; font-size: 0.78rem; font-family: monospace; }
+.errSource   { color: #666; max-width: 220px; word-break: break-all; font-size: 0.78rem; }
+.errMessage  { color: #aaa; word-break: break-word; }
+
+.errLevelWARNING  { color: #c0a840; white-space: nowrap; width: 80px; }
+.errLevelERROR    { color: #ca5f5f; white-space: nowrap; width: 80px; }
+.errLevelCRITICAL { color: #ff6b35; white-space: nowrap; width: 80px; font-weight: 600; }
+
+.errExpandRow td { background: #0a0a0a; padding: 0 !important; border-top: none !important; }
+.errTraceback {
+  margin: 0;
+  padding: 0.6rem 1rem;
+  font-size: 0.75rem;
+  color: #666;
+  white-space: pre-wrap;
+  word-break: break-all;
+  border-left: 2px solid #2a1a1a;
+}
+
 /* ── scheduler blocks ─────────────────────────────────────────── */
 .schedBlock {
   display: flex;

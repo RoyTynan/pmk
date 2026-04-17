@@ -14,19 +14,96 @@ Open the **assistant** top-level tab. Enter a name for your scheduler (e.g. `ima
 {name}_scheduler/
 ├── scheduler.py           ← SchedulerBase subclass with HANDLER_REGISTRY
 ├── paths.py               ← filesystem paths (database/, logs/)
+├── logger.py              ← rotating file logger → logs/{name}.log
 ├── db.py                  ← SQLite schema and helpers for {name}.db
 ├── router.py              ← FastAPI GET / POST / DELETE routes
 ├── handlers/
-│   ├── base.py            ← base class for your handlers
+│   ├── base.py            ← base class; owns try/except + logging via _handle()
 │   └── string_handlers.py ← three working example handlers (replace with your own)
 ├── database/
 │   └── {name}.db          ← scheduler's own SQLite database (created on first run)
-└── logs/                  ← log files
+└── logs/
+    └── {name}.log         ← rotating exception log (5 MB × 3 files)
 ```
 
 The scaffold is immediately registered in both `scheduler_registry.py` and `router_registry.py` — no manual edits required. Click **stop kernel & register** in the assistant tab to restart the kernel and activate the new scheduler.
 
 The example handlers (`RemoveAlternateWordsHandler`, `AddWordHandler`, `DeleteWordHandler`) are working boilerplate that prove the scaffold is wired correctly. Replace them with your own handler logic.
+
+---
+
+## Exception handling and logging
+
+Each generated scheduler is responsible for its own exception handling. The kernel does **not** catch scheduler exceptions — any unhandled exception will mark a task as failed and be recorded in the scheduler's log file only, not the kernel exception log.
+
+### The log file
+
+`logger.py` sets up a rotating file logger writing to `logs/{name}.log` (5 MB per file, 3 files retained). Import it anywhere in your scheduler:
+
+```python
+from schedulers.{name}_scheduler.logger import logger
+```
+
+Use the standard Python logging levels:
+
+```python
+logger.warning("something unexpected but recoverable")
+logger.error("operation failed: %s", err)
+logger.exception("unexpected error")   # logs at ERROR and appends the full traceback automatically
+```
+
+### The `_handle()` pattern
+
+The scaffold's `handlers/base.py` provides a built-in safety net. The public `handle()` method wraps `_handle()` in try/except and logs any exception before re-raising it:
+
+```python
+class MyHandlerBase(HandlerBase):
+    def handle(self, input: str, options: dict | None = None) -> str:
+        try:
+            return self._handle(input, options or {})
+        except Exception as e:
+            logger.exception(f"{self.__class__.__name__}.handle failed — input: {input[:120]!r}")
+            raise
+
+    def _handle(self, input: str, options: dict) -> str:
+        raise NotImplementedError
+```
+
+**Your handlers implement `_handle()`, not `handle()`**. This means every handler failure is automatically logged with a traceback — you get that for free. You do not need to add try/except in `_handle()` unless you want to handle specific exceptions differently (e.g. catch a network error and retry, or return a fallback value instead of failing the task).
+
+### What the scaffold catches by default
+
+| Location | What is caught | Log level |
+|---|---|---|
+| `handlers/base.py` `handle()` | Any unhandled exception from `_handle()` | ERROR + traceback |
+| `scheduler.py` `_run_task()` | Exception re-raised from `handle()` | ERROR + traceback |
+| `router.py` each route | Any exception from handler or DB | ERROR + traceback |
+
+### What you are responsible for
+
+The default try/except blocks are safety nets for unexpected failures. For real exception handling you should:
+
+- **Catch specific exception types** — `except ValueError`, `except httpx.TimeoutException`, etc. rather than bare `except Exception`
+- **Log meaningful context** — include the input, the external service name, the operation being attempted
+- **Decide the outcome** — re-raise to fail the task, return a fallback value, retry with backoff, or log and continue
+- **Clean up resources** — close files, release locks, cancel pending requests in a `finally` block
+
+Example of a well-handled exception in a handler:
+
+```python
+def _handle(self, input: str, options: dict) -> str:
+    url = options.get("url", "")
+    try:
+        response = httpx.get(url, timeout=10.0)
+        response.raise_for_status()
+    except httpx.TimeoutException:
+        logger.warning("request timed out for url=%r — returning empty result", url)
+        return json.dumps({"input": input, "output": "", "error": "timeout"})
+    except httpx.HTTPStatusError as e:
+        logger.error("HTTP %s for url=%r", e.response.status_code, url)
+        raise
+    return json.dumps({"input": input, "output": response.text})
+```
 
 ---
 
@@ -110,22 +187,49 @@ server/schedulers/{name}_scheduler/
     └── base.py
 ```
 
-### 2. Write a handler
+### 2. Write a logger
 
-Subclass `HandlerBase` from `kernelroot.core.handler_base` and implement `handle()`. The method receives `input` (str) and `options` (dict) and must return a string. Raise an exception to mark the task as failed.
+Copy `logger.py` from any generated scaffold, or write it directly:
+
+```python
+# server/schedulers/{name}_scheduler/logger.py
+import logging, logging.handlers, os
+from schedulers.{name}_scheduler.paths import LOGS_DIR
+
+def _build():
+    os.makedirs(LOGS_DIR, exist_ok=True)
+    log = logging.getLogger("schedulers.{name}_scheduler")
+    log.propagate = False
+    log.setLevel(logging.DEBUG)
+    if not log.handlers:
+        h = logging.handlers.RotatingFileHandler(
+            os.path.join(LOGS_DIR, "{name}.log"), maxBytes=5*1024*1024, backupCount=3
+        )
+        h.setFormatter(logging.Formatter("%(asctime)s  %(levelname)-8s  %(message)s", datefmt="%Y-%m-%d %H:%M:%S"))
+        log.addHandler(h)
+    return log
+
+logger = _build()
+```
+
+### 3. Write a handler
+
+Subclass your scheduler's `HandlerBase` (which wraps `_handle()` with automatic logging) and implement `_handle()`. The method receives `input` (str) and `options` (dict) and must return a string. Raise an exception to mark the task as failed.
 
 ```python
 # server/schedulers/{name}_scheduler/handlers/my_handler.py
-from kernelroot.core.handler_base import HandlerBase
+from schedulers.{name}_scheduler.handlers.base import MyHandlerBase
 import json
 
-class MyHandler(HandlerBase):
-    def handle(self, input: str, options: dict | None = None) -> str:
+class MyHandler(MyHandlerBase):
+    def _handle(self, input: str, options: dict) -> str:
         result = f"processed: {input[:50]}"
         return json.dumps({"input": input, "output": result})
 ```
 
-### 3. Write the scheduler
+If you are not using the scaffold's base class pattern, implement `handle()` directly but add try/except and log exceptions yourself — see [Exception handling and logging](#exception-handling-and-logging).
+
+### 4. Write the scheduler
 
 Subclass `SchedulerBase`, declare `NAME` and `HANDLER_REGISTRY`, and implement `run()`. The base class provides `_stop_event` and `_sleep()` for clean shutdown.
 
@@ -137,6 +241,7 @@ from kernelroot.core import task_queue
 from kernelroot.core.scheduler_base import SchedulerBase
 from kernelroot.core.config import POLL_INTERVAL_SECONDS
 from schedulers.{name}_scheduler.handlers.my_handler import MyHandler
+from schedulers.{name}_scheduler.logger import logger
 
 class MyScheduler(SchedulerBase):
     NAME = "{name}"
@@ -182,6 +287,7 @@ class MyScheduler(SchedulerBase):
         except Exception as e:
             ok = False
             err = str(e)
+            logger.exception("task %s (%s) failed: %s", short_id, task["agent_type"], e)
         finally:
             # log before mark_done/failed so the activity entry exists
             # when the IPC change notification fires
@@ -203,7 +309,7 @@ class MyScheduler(SchedulerBase):
 
 `agent_type` for tasks submitted to this scheduler follows the convention `{scheduler_name}_{operation_name}` — so `my_remove_alternate`, `my_add_word`, etc.
 
-### 4. Write a router (optional)
+### 5. Write a router (optional)
 
 If your scheduler needs its own HTTP endpoints beyond what the kernel API auto-generates (e.g. for querying your scheduler's database), add a `router.py`:
 
@@ -219,7 +325,7 @@ def list_results():
     return scheduler_db.list_results()
 ```
 
-### 5. Register it
+### 6. Register it
 
 Add the scheduler to `server/kernelroot/scheduler_registry.py`:
 
